@@ -1,0 +1,9 @@
+import ../skulite, ../skulite/sqlite3c
+
+proc readonly(stmt: Statement): cint {.importcSqlite: "sqlite3_stmt_readonly".}
+let db = openDatabase(":memory:")
+let s1 = db.prepStatement "CREATE TABLE IF NOT EXISTS test(words)"
+doAssert not bool(readonly(s1))
+exec s1
+let s2 = db.prepStatement "SELECT * from test"
+doAssert bool(readonly(s2))
