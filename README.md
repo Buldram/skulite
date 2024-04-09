@@ -1,4 +1,4 @@
-High-level [SQLite](https://www.sqlite.org) bindings in Nim.
+High-level [SQLite](https://www.sqlite.org) bindings for Nim.
 
 ```nim
 ## Basic example
