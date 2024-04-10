@@ -64,7 +64,7 @@ block strings:
   doAssert db.query("SELECT words FROM example LIMIT 1", string) == ""
 
 block blobs:
-  var db = openDatabase(":memory:")
+  var db: Database
 
   template checkGetColumnMatches() =
     let stmt = db.step("SELECT blobs FROM test LIMIT 1")
