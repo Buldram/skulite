@@ -33,11 +33,10 @@ block strings:
     doAssert stmt[0, openArray[char], optForLong = true] == "Hello"
 
   template testInsert(hello: typed) =
-    db.open(cstring ":memory:")
+    db.reopen(cstring ":memory:")
     db.exec "CREATE TABLE example(words TEXT) STRICT"
     db.exec "INSERT INTO example (words) VALUES (?)", hello
     checkGetColumnMatches()
-    db.close()
 
   testInsert(cstring "Hello")
   testInsert("Hello")
@@ -52,13 +51,12 @@ block strings:
   testInsert("Hello".toOpenArray(0, 4))
   testInsert(['H', 'e', 'l', 'l', 'o'].toOpenArray(0, 4))
 
-  db.open(":memory:")
+  db.reopen(":memory:")
   db.exec "CREATE TABLE example(words TEXT) STRICT"
   db.exec "INSERT INTO example (words) VALUES (?)", "Tschüss, 🌍!"
   doAssert db.query("SELECT words FROM example LIMIT 1", string) == "Tschüss, 🌍!"
-  db.close()
 
-  db.open(":memory:")
+  db.reopen(":memory:")
   db.exec "CREATE TABLE example(words TEXT) STRICT"
   db.exec "INSERT INTO example (words) VALUES (?)", ""
   doAssert db.query("SELECT words FROM example LIMIT 1", string) == ""
@@ -73,11 +71,10 @@ block blobs:
     doAssert stmt[0, openArray[byte]] == [byte 1, 2, 3, 4, 5]
 
   template testInsert(countup: typed) =
-    db.open(":memory:")
+    db.reopen(":memory:")
     db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
     db.exec "INSERT INTO test (blobs) VALUES (?)", countup
     checkGetColumnMatches()
-    db.close()
 
   testInsert([byte 1, 2, 3, 4, 5])
   var aCountup = [byte 1, 2, 3, 4, 5]; testInsert(aCountup)
@@ -102,7 +99,6 @@ block objects:
     doAssert false, "Will never be reached as Test->Test2 is a conversion match, concepts are considered generic matches and have a higher precedence."
 
   proc reset(db: var DatabaseWrapper) =
-    db.close()
     db = openDatabase(":memory:")
     db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
 

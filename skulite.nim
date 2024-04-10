@@ -36,14 +36,18 @@ proc `=destroy`*(x: DatabaseWrapper) =
 proc `=copy`*(dest: var DatabaseWrapper; src: DatabaseWrapper) {.error.}
 proc `=dup`*(x: DatabaseWrapper): DatabaseWrapper {.error.}
 
-proc open*(db: out Database; filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) {.inline.} =
+proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper {.inline.} =
+  sqliteCheck sqlite3_open_v2(filename, result.raw, flags, vfs)
+
+template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper =
+  openDatabase(cstring filename, flags, vfs)
+
+proc reopen*(db: var Database; filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) {.inline.} =
+  sqliteCheck sqlite3_close_v2(db)
   sqliteCheck sqlite3_open_v2(filename, db, flags, vfs)
 
-template open*(db: out Database; filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) =
-  open(db, cstring filename, flags, vfs)
-
-proc openDatabase*(filename: cstring|string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper {.inline.} =
-  open(result.raw, filename, flags, vfs)
+template reopen*(db: var Database; filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) =
+  reopen(db, cstring filename, flags, vfs)
 
 converter toRaw*(db: DatabaseWrapper): lent Database {.inline.} = db.raw
 converter toRaw*(db: var DatabaseWrapper): var Database {.inline.} = db.raw
@@ -67,17 +71,19 @@ proc `=destroy`*(x: StatementWrapper) =
 proc `=copy`*(dest: var StatementWrapper; src: StatementWrapper) {.error.}
 proc `=dup`*(x: StatementWrapper): StatementWrapper {.error.}
 
-proc preparev3(db: Database; sql: cstring; len: int32; flags: set[PrepareFlag]; stmt: out Statement) {.inline.} =
-  sqliteCheck sqlite3_prepare_v3(db, sql, len, flags, stmt, nil)
+proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
+  sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.raw, nil)
 
-template prepare*(stmt: out Statement; db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}) =
-  preparev3(db, sql, int32 sql.len, flags, stmt)
+proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
+  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](addr sql), int32 sql.len, flags, result.raw, nil)
 
-proc prepare*(stmt: out Statement; db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}) {.inline.} =
-  preparev3(db, cast[cstring](addr sql), int32 sql.len, flags, stmt)
+proc reprepare*(stmt: var Statement; db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}) {.inline.} =
+  sqliteCheck sqlite3_finalize(stmt)
+  sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, stmt, nil)
 
-proc prepStatement*(db: Database; sql: auto; flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
-  prepare(result.raw, db, sql, flags)
+proc reprepare*(stmt: var Statement; db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}) {.inline.} =
+  sqliteCheck sqlite3_finalize(stmt)
+  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](addr sql), int32 sql.len, flags, stmt, nil)
 
 converter toRaw*(stmt: StatementWrapper): lent Statement {.inline.} = stmt.raw
 converter toRaw*(stmt: var StatementWrapper): var Statement {.inline.} = stmt.raw
