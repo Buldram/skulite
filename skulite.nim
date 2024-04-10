@@ -304,15 +304,10 @@ proc echoTable(data: seq[seq[string]]) =
     for i in 1 .. data.high:
       for j in 0 .. data[i].high:
         maxWidths[j] = max(maxWidths[j], data[i][j].len)
-    var line = newStringUninit(sum(maxWidths) + maxWidths.len)
     for i in 0 .. data.high:
-      var pos = 0
       for j in 0 .. data[i].high:
-        var cell = alignLeft(data[i][j], maxWidths[j] + 1)
-        let len = cell.len
-        line[pos ..< pos + len] = ensureMove(cell)
-        pos += len
-      echo line
+        stdout.write alignLeft(data[i][j], maxWidths[j] + 1)
+      stdout.write '\n'; stdout.flushFile()
 
 proc explain*(stmt: Statement) =
   ## Echoes a table explaining how `stmt`'s execution within SQLite is planned.
