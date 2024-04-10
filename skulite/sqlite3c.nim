@@ -9,27 +9,25 @@ when not staticSqlite:
 else:
   const sqliteThreadsafe {.booldefine.} = compileOption("threads")
     ## Measurable performance impact, but with it disabled SQLite can only be used on a single thread at a time.
-  const sqliteCompFlags {.strdefine.} = block:
+  const sqliteCompFlags {.strdefine.} = (func: string =
     ## Options passed to the linker when compiling SQLite.
     ## More info: https://www.sqlite.org/compile.html
-    var opts: string
-    opts.add " -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1"
-    opts.add " -DSQLITE_LIKE_DOESNT_MATCH_BLOBS=1"
-    opts.add " -DSQLITE_DEFAULT_MEMSTATUS=0"
-    opts.add " -DSQLITE_DQS=0" # Disable the double-quoted string literal misfeature.
-    opts.add " -DSQLITE_OMIT_DEPRECATED=1"
-    opts.add " -DSQLITE_OMIT_DECLTYPE=1"
-    opts.add " -DSQLITE_OMIT_PROGRESS_CALLBACK=1"
-    opts.add " -DSQLITE_OMIT_SHARED_CACHE=1"
+    result.add " -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1"
+    result.add " -DSQLITE_LIKE_DOESNT_MATCH_BLOBS=1"
+    result.add " -DSQLITE_DEFAULT_MEMSTATUS=0"
+    result.add " -DSQLITE_DQS=0" # Disable the double-quoted string literal misfeature.
+    result.add " -DSQLITE_OMIT_DEPRECATED=1"
+    result.add " -DSQLITE_OMIT_DECLTYPE=1"
+    result.add " -DSQLITE_OMIT_PROGRESS_CALLBACK=1"
+    result.add " -DSQLITE_OMIT_SHARED_CACHE=1"
     when not sqliteThreadsafe:
-      opts.add " -DSQLITE_THREADSAFE=0"
+      result.add " -DSQLITE_THREADSAFE=0"
     when not defined(windows):
-      opts.add " -DSQLITE_USE_ALLOCA=1"
+      result.add " -DSQLITE_USE_ALLOCA=1"
     when not defined(release):
-      opts.add " -DSQLITE_ENABLE_API_ARMOR"
+      result.add " -DSQLITE_ENABLE_API_ARMOR"
     elif defined(danger):
-      opts.add " -DSQLITE_MAX_EXPR_DEPTH=0"
-    opts
+      result.add " -DSQLITE_MAX_EXPR_DEPTH=0")()
   {.compile("sqlite3.c", sqliteCompFlags).}
 
 proc importcSqliteImpl(name, body: NimNode): NimNode =

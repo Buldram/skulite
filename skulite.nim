@@ -104,30 +104,6 @@ proc exec*(stmt: Statement) {.inline.} =
   if unlikely ret != SQLITE_DONE:
     raiseSqliteError ret
 
-type
-  Positive32* = range[1'i32 .. high(int32)] # bindParam indexes
-  Natural32* = range[0'i32 .. high(int32)]  # getColumn indexes
-
-macro `[]=`*(stmt: Statement; index: Positive32; args: varargs[untyped]) =
-  ## Bind `val` to the `index` parameter (?) of `stmt`, index starts at 1.
-  ## Alias for `bindParam`, `args` passes any extra arguments to `bindParam`.
-  result = newCall("bindParam", stmt, index, args[^1])
-  for i in 0 ..< args.len-1: result.add args[i]
-
-macro `[]`*[t](stmt: Statement; index: Natural32; T: typedesc[t]; other: varargs[untyped]): t =
-  ## Get a value of type `T` from `stmt` at column `index`.
-  ## Alias for `getColumn`, `other` passes any extra arguments to `getColumn`.
-  result = newCall("getColumn", stmt, index, T)
-  for arg in other: result.add arg
-
-proc restart*(stmt: Statement) {.inline.} =
-  ## Reset a statement to the beginning of its program, ready to be re-executed.
-  ## Does not unbind bound parameters.
-  sqliteCheck sqlite3_reset(stmt)
-
-proc clearParams*(stmt: Statement) {.inline.} =
-  sqliteCheck sqlite3_clear_bindings(stmt)
-
 
 func db*(stmt: Statement): Database {.inline.} =
   ## Returns the database connection to which `stmt` belongs.
@@ -147,7 +123,31 @@ template checkUsage(stmt: Statement) =
   when checkSqliteUsage:
     checkForError(stmt)
 
+type
+  Positive32* = range[1'i32 .. high(int32)] # bindParam indexes
+  Natural32* = range[0'i32 .. high(int32)]  # getColumn indexes
+
+macro `[]=`*(stmt: Statement; index: Positive32; args: varargs[untyped]) =
+  ## Bind `val` to the `index` parameter (?) of `stmt`, index starts at 1.
+  ## Alias for `bindParam`, `args` passes any extra arguments to `bindParam`.
+  result = newCall("bindParam", stmt, index, args[^1])
+  for i in 0 ..< args.len-1: result.add args[i]
+
+macro `[]`*[t](stmt: Statement; index: Natural32; T: typedesc[t]; other: varargs[untyped]): t =
+  ## Get a value of type `T` from `stmt` at column `index`.
+  ## Alias for `getColumn`, `other` passes any extra arguments to `getColumn`.
+  result = newCall("getColumn", stmt, index, T)
+  for arg in other: result.add arg
+
 include skulite/stmtops # Includes implementations of `bindParam` and `getColumn` for different value types
+
+proc restart*(stmt: Statement) {.inline.} =
+  ## Reset a statement to the beginning of its program, ready to be re-executed.
+  ## Does not unbind bound parameters.
+  sqliteCheck sqlite3_reset(stmt)
+
+proc clearParams*(stmt: Statement) {.inline.} =
+  sqliteCheck sqlite3_clear_bindings(stmt)
 
 
 #                                       Statement utilities
