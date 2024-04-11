@@ -28,8 +28,7 @@ func sqliteCheck*(ret: ResultCode) {.inline, raises: [SqliteError].} =
   if unlikely ret != SQLITE_OK: raiseSqliteError(ret)
 
 
-# SQlite tracks when `Database`/`Statement` pointers are nulled so we have "wrapper" objects to hold the pointers.
-# This modules' procedures however accept the underlying pointer (with implicit unwrapping via `converter`) which gives users the option to create and use custom objects.
+# We have "wrapped" objects for destructors but this modules' procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
 
 type
   Database* = ptr sqlite3
@@ -40,11 +39,10 @@ proc close*(db: var Database) {.inline.} =
   sqliteCheck sqlite3_close_v2(db)
   db = nil
 
-proc `=destroy`*(x: DatabaseWrapper) =
-  discard sqlite3_close_v2(x.raw)
-
 proc `=copy`*(dest: var DatabaseWrapper; src: DatabaseWrapper) {.error.}
 proc `=dup`*(x: DatabaseWrapper): DatabaseWrapper {.error.}
+proc `=destroy`*(x: DatabaseWrapper) =
+  discard sqlite3_close_v2(x.raw)
 
 proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper {.inline.} =
   sqliteCheck sqlite3_open_v2(filename, result.raw, flags, vfs)
@@ -52,15 +50,15 @@ proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vf
 template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper =
   openDatabase(cstring filename, flags, vfs)
 
+converter toRaw*(db: DatabaseWrapper): lent Database {.inline.} = db.raw
+converter toRaw*(db: var DatabaseWrapper): var Database {.inline.} = db.raw
+
 proc reopen*(db: var Database; filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) {.inline.} =
   sqliteCheck sqlite3_close_v2(db)
   sqliteCheck sqlite3_open_v2(filename, db, flags, vfs)
 
 template reopen*(db: var Database; filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) =
   reopen(db, cstring filename, flags, vfs)
-
-converter toRaw*(db: DatabaseWrapper): lent Database {.inline.} = db.raw
-converter toRaw*(db: var DatabaseWrapper): var Database {.inline.} = db.raw
 
 proc flush*(db: Database) {.inline.} =
   sqliteCheck sqlite3_db_cacheflush(db)
@@ -75,17 +73,19 @@ proc finalize*(stmt: var Statement) {.inline.} =
   sqliteCheck sqlite3_finalize(stmt)
   stmt = nil
 
-proc `=destroy`*(x: StatementWrapper) =
-  discard sqlite3_finalize(x.raw)
-
 proc `=copy`*(dest: var StatementWrapper; src: StatementWrapper) {.error.}
 proc `=dup`*(x: StatementWrapper): StatementWrapper {.error.}
+proc `=destroy`*(x: StatementWrapper) =
+  discard sqlite3_finalize(x.raw)
 
 proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
   sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.raw, nil)
 
 proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
   sqliteCheck sqlite3_prepare_v3(db, cast[cstring](addr sql), int32 sql.len, flags, result.raw, nil)
+
+converter toRaw*(stmt: StatementWrapper): lent Statement {.inline.} = stmt.raw
+converter toRaw*(stmt: var StatementWrapper): var Statement {.inline.} = stmt.raw
 
 proc reprepare*(stmt: var Statement; db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}) {.inline.} =
   sqliteCheck sqlite3_finalize(stmt)
@@ -94,9 +94,6 @@ proc reprepare*(stmt: var Statement; db: Database; sql: cstring and (not string)
 proc reprepare*(stmt: var Statement; db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}) {.inline.} =
   sqliteCheck sqlite3_finalize(stmt)
   sqliteCheck sqlite3_prepare_v3(db, cast[cstring](addr sql), int32 sql.len, flags, stmt, nil)
-
-converter toRaw*(stmt: StatementWrapper): lent Statement {.inline.} = stmt.raw
-converter toRaw*(stmt: var StatementWrapper): var Statement {.inline.} = stmt.raw
 
 func sql*(stmt: Statement): cstring {.inline.} =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.
@@ -210,7 +207,7 @@ func busy*(stmt: Statement): bool {.inline.} =
   bool(sqlite3_stmt_busy(stmt))
 
 proc lastStatement*(db: Database; stmt: Statement = nil): Statement =
-  ## Returns the last `Statement` prepared before `stmt`, or if `stmt` is nil, the last `Statement` prepared.
+  ## Returns the last `Statement` prepared before `stmt`, or if `stmt` is `nil`, the last `Statement` prepared.
   sqlite3_next_stmt(db, stmt)
 
 
