@@ -1,3 +1,13 @@
+## SQlite wrapper module.
+runnableExamples:
+  # Prints "Hello, world!"
+  let db = openDatabase(":memory:")
+  db.exec "CREATE TABLE IF NOT EXISTS example(words TEXT) STRICT"
+  db.exec "INSERT INTO example (words) VALUES (?),(?)", ("Hello,", "world!")
+  for word in db.query("SELECT words FROM example", string):
+    echo word
+
+
 import std/[macros, options, typetraits]
 import skulite/[sqlite3c, shim]
 export OpenFlag, SuperJournal, PrepareFlag, Datatype
@@ -18,8 +28,8 @@ func sqliteCheck*(ret: ResultCode) {.inline, raises: [SqliteError].} =
   if unlikely ret != SQLITE_OK: raiseSqliteError(ret)
 
 
-# SQlite tracks when `Database`/`Statement` pointers are nulled so we have "wrapper" objects which contain these pointers.
-# This modules' procedures however accept the underlying pointer type (with implicit conversion via `converter`) allowing users to create and use custom objects.
+# SQlite tracks when `Database`/`Statement` pointers are nulled so we have "wrapper" objects to hold the pointers.
+# This modules' procedures however accept the underlying pointer (with implicit unwrapping via `converter`) which gives users the option to create and use custom objects.
 
 type
   Database* = ptr sqlite3
