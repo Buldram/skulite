@@ -46,9 +46,9 @@ echo "language: ", db.query("SELECT json_extract(metadata, '$.language') FROM pr
 
 ## Notes
 
-* `-d:staticSqlite`: Statically build and bundle SQlite instead of dynamically linking, enabled by default on Windows.
-  * There are more options for configuring the compilation and linking of SQLite in the header of [sqlite3c.nim](skulite/sqlite3c.nim).
-* `-d:checkSqliteUsage`: Check for errors after calls which cannot fail outside of misuse, enabled by default for debug builds.
+* `-d:staticSqlite`: Build and link SQlite statically, enabled by default on Windows.
+  * There are more options related to compiling SQLite in the header of [sqlite3c.nim](skulite/sqlite3c.nim).
+* `-d:checkSqliteUsage`: Check if you're misusing the SQLite API, enabled by default for debug builds.
 
 ## See also
 * https://github.com/codehz/easy_sqlite3
