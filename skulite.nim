@@ -272,8 +272,7 @@ template transaction*(db: Database; body: typed) =
 
 #                                              Debug
 
-from std/strutils import alignLeft, repeat
-from std/math import sum
+from std/strutils import alignLeft
 
 proc isExplain*(stmt: Statement): range[0'i8 .. 2'i8] {.inline.} =
   ## Returns 0 if `stmt` is not an "EXPLAIN" statement, 1 otherwise, and 2 if `stmt` is an "EXPLAIN QUERY PLAN" statement.
