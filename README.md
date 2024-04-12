@@ -34,8 +34,8 @@ let db = openDatabase(":memory:")
 db.exec "CREATE TABLE IF NOT EXISTS projects(metadata TEXT) STRICT"
 let proj = {"name": "skulite", "language": "nim", "license": "blessing"}.toTable
 db.exec "INSERT INTO projects (metadata) VALUES (?)", proj
-echo "name: ", db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["name"]
-echo "language: ", db.query("SELECT json_extract(metadata, '$.language') FROM projects LIMIT 1", string)
+echo "name: ", db.query("SELECT metadata FROM projects", Table[string, string])["name"]
+echo "language: ", db.query("SELECT json_extract(metadata, '$.language') FROM projects", string)
 
 # name: skulite
 # language: nim
