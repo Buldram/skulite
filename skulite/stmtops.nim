@@ -54,7 +54,7 @@ template bindParam*(stmt: Statement; index: Positive32; val: cstring and (not st
   bindText(stmt, index, val, int32 val.len, SQLITE_TRANSIENT)
 
 proc bindParam*(stmt: Statement; index: Positive32; val: openArray[char]) {.inline.} =
-  bindText(stmt, index, cast[cstring](addr val), int32 val.len, SQLITE_TRANSIENT)
+  bindText(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[cstring]): cstring {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -103,7 +103,7 @@ proc bindBlob(stmt: Statement; index: int32; val: pointer; len: int32; destructo
   sqliteCheck sqlite3_bind_blob(stmt, index, val, len, destructor)
 
 proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-  bindBlob(stmt, index, addr val, int32 val.len, SQLITE_TRANSIENT)
+  bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[ptr UncheckedArray[byte]]): T {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -165,7 +165,7 @@ type
     T isnot openArray|array # To avoid overloading conversions to openArray
  
 proc bindParam*[T: CopyMemable](stmt: Statement; index: Positive32; val: T) {.inline.} =
-  bindBlob(stmt, index, addr val, int32 sizeof(T), SQLITE_TRANSIENT)
+  bindBlob(stmt, index, unsafeAddr val, int32 sizeof(T), SQLITE_TRANSIENT)
 
 proc getColumn*[t: CopyMemable](stmt: Statement; index: Natural32; T: typedesc[t]): t {.inline.} =
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])

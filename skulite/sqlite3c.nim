@@ -211,11 +211,17 @@ const
 func sqlite3_errstr*(code: ResultCode): cstring {.importcSqlite.}
 func sqlite3_errcode*(db: ptr sqlite3): ResultCode {.importcSqlite.}
 
-proc sqlite3_open_v2*(filename: cstring; db: out ptr sqlite3; flags: set[OpenFlag]; vfs: cstring): ResultCode {.importcSqlite, sideEffect.}
+when defined(nimHasOutParams):
+  proc sqlite3_open_v2*(filename: cstring; db: out ptr sqlite3; flags: set[OpenFlag]; vfs: cstring): ResultCode {.importcSqlite, sideEffect.}
+else:
+  proc sqlite3_open_v2*(filename: cstring; db: var ptr sqlite3; flags: set[OpenFlag]; vfs: cstring): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_close_v2*(db: ptr sqlite3): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_db_cacheflush*(db: ptr sqlite3): ResultCode {.importcSqlite, sideEffect.}
 
-proc sqlite3_prepare_v3*(db: ptr sqlite3; sql: cstring; len: int32; prepFlags: set[PrepareFlag]; stmt: out ptr sqlite3_stmt; tail: ptr cstring): ResultCode {.importcSqlite, sideEffect.}
+when defined(nimHasOutParams):
+  proc sqlite3_prepare_v3*(db: ptr sqlite3; sql: cstring; len: int32; prepFlags: set[PrepareFlag]; stmt: out ptr sqlite3_stmt; tail: ptr cstring): ResultCode {.importcSqlite, sideEffect.}
+else:
+  proc sqlite3_prepare_v3*(db: ptr sqlite3; sql: cstring; len: int32; prepFlags: set[PrepareFlag]; stmt: var ptr sqlite3_stmt; tail: ptr cstring): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_finalize*(stmt: ptr sqlite3_stmt): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_step*(stmt: ptr sqlite3_stmt): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_reset*(stmt: ptr sqlite3_stmt): ResultCode {.importcSqlite, sideEffect.}

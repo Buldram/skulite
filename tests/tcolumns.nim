@@ -114,7 +114,7 @@ block objects:
   doAssert db.query("SELECT blobs FROM test LIMIT 1", Test) == bomber
 
   proc bindParam[T: Test|Test2](stmt: Statement; index: Positive32; val: T) {.inline.} =
-    sqliteCheck sqlite3_bind_blob(stmt, cint index, addr bomber, cint sizeof(bomber), SQLITE_STATIC)
+    sqliteCheck sqlite3_bind_blob(stmt, cint index, unsafeAddr bomber, cint sizeof(bomber), SQLITE_STATIC)
 
   reset db
   db.exec "INSERT INTO test (blobs) VALUES (?)", Test(a: 10, b: 'b')

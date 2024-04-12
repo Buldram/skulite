@@ -33,8 +33,12 @@ proc close*(db: var Database) {.inline.} =
 
 proc `=copy`*(dest: var DatabaseWrapper; src: DatabaseWrapper) {.error.}
 proc `=dup`*(x: DatabaseWrapper): DatabaseWrapper {.error.}
-proc `=destroy`*(x: DatabaseWrapper) =
-  discard sqlite3_close_v2(x.raw)
+when defined(nimAllowNonVarDestructor):
+  proc `=destroy`*(x: DatabaseWrapper) =
+    discard sqlite3_close_v2(x.raw)
+else:
+  proc `=destroy`*(x: var DatabaseWrapper) =
+    discard sqlite3_close_v2(x.raw)
 
 proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper {.inline.} =
   sqliteCheck sqlite3_open_v2(filename, result.raw, flags, vfs)
@@ -67,14 +71,18 @@ proc finalize*(stmt: var Statement) {.inline.} =
 
 proc `=copy`*(dest: var StatementWrapper; src: StatementWrapper) {.error.}
 proc `=dup`*(x: StatementWrapper): StatementWrapper {.error.}
-proc `=destroy`*(x: StatementWrapper) =
-  discard sqlite3_finalize(x.raw)
+when defined(nimAllowNonVarDestructor):
+  proc `=destroy`*(x: StatementWrapper) =
+    discard sqlite3_finalize(x.raw)
+else:
+  proc `=destroy`*(x: var StatementWrapper) =
+    discard sqlite3_finalize(x.raw)
 
 proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
   sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.raw, nil)
 
 proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
-  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](addr sql), int32 sql.len, flags, result.raw, nil)
+  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result.raw, nil)
 
 converter toRaw*(stmt: StatementWrapper): lent Statement {.inline.} = stmt.raw
 converter toRaw*(stmt: var StatementWrapper): var Statement {.inline.} = stmt.raw
@@ -85,7 +93,7 @@ proc reprepare*(stmt: var Statement; db: Database; sql: cstring and (not string)
 
 proc reprepare*(stmt: var Statement; db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}) {.inline.} =
   sqliteCheck sqlite3_finalize(stmt)
-  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](addr sql), int32 sql.len, flags, stmt, nil)
+  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, stmt, nil)
 
 func sql*(stmt: Statement): cstring {.inline.} =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.
@@ -176,8 +184,12 @@ type
   SqliteAlloc[T: pointer|ptr|cstring] = object ## Wrapper with a `=destroy` hook which calls `sqlite3_free` on `val`
     val*: T
 
-proc `=destroy`*[T](x: SqliteAlloc[T]) =
-  sqlite3_free(x.val)
+when defined(nimAllowNonVarDestructor):
+  proc `=destroy`*[T](x: SqliteAlloc[T]) =
+    sqlite3_free(x.val)
+else:
+  proc `=destroy`*[T](x: var SqliteAlloc[T]) =
+    sqlite3_free(x.val)
 
 proc `=copy`*[T](dest: var SqliteAlloc[T]; src: SqliteAlloc[T]) {.error.}
 proc `=dup`*[T](x: SqliteAlloc[T]): SqliteAlloc[T] {.error.}

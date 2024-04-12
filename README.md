@@ -1,7 +1,7 @@
 # Skulite
 
 High-level [SQLite](https://www.sqlite.org) bindings for [Nim](https://nim-lang.org).  
-Requires Nim 2.0 or greater and ARC/ORC memory management.
+Requires Nim 1.6 or greater and ARC/ORC memory management.
 
 ## Examples
 
@@ -19,7 +19,7 @@ for word in db.query("SELECT words FROM greeting", string):
 # World!
 ```
 
-#### Serializing a [Table](https://nim-lang.org/docs/tables.html) as [JSON](https://www.sqlite.org/json1.html) using [Sunny](https://github.com/guzba/sunny)
+#### Serializing a [table](https://nim-lang.org/docs/tables.html) as [JSON](https://www.sqlite.org/json1.html) using [Sunny](https://github.com/guzba/sunny)
 ```nim
 import pkg/[skulite, sunny],
        std/tables
