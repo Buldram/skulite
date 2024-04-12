@@ -31,7 +31,8 @@ let db = openDatabase(":memory:")
 db.exec "CREATE TABLE IF NOT EXISTS projects(metadata TEXT) STRICT"
 let skulite = {"name": "skulite", "language": "nim", "license": "blessing"}.toTable
 db.exec "INSERT INTO projects (metadata) VALUES (?)", skulite
-doAssert db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["language"] == "nim"
+doAssert db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["language"] ==
+         db.query("SELECT json_extract(metadata, '$.language') FROM projects LIMIT 1", string)
 ```
 † See all `bindParam` and `getColumn` implementations in [stmtops.nim](skulite/stmtops.nim).
 
