@@ -14,6 +14,9 @@ db.exec "CREATE TABLE IF NOT EXISTS greeting(words TEXT) STRICT"
 db.exec "INSERT INTO greeting (words) VALUES (?),(?)", ("Hello,", "World!")
 for word in db.query("SELECT words FROM greeting", string):
   echo word
+
+# Hello,
+# World!
 ```
 
 #### Serializing a [Table](https://nim-lang.org/docs/tables.html) as [JSON](https://www.sqlite.org/json1.html) using [Sunny](https://github.com/guzba/sunny)
@@ -29,10 +32,13 @@ proc getColumn*[K,V](stmt: Statement; index: Natural32; T: typedesc[SomeTable[K,
 
 let db = openDatabase(":memory:")
 db.exec "CREATE TABLE IF NOT EXISTS projects(metadata TEXT) STRICT"
-let skulite = {"name": "skulite", "language": "nim", "license": "blessing"}.toTable
-db.exec "INSERT INTO projects (metadata) VALUES (?)", skulite
-doAssert db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["language"] ==
-         db.query("SELECT json_extract(metadata, '$.language') FROM projects LIMIT 1", string)
+let proj = {"name": "skulite", "language": "nim", "license": "blessing"}.toTable
+db.exec "INSERT INTO projects (metadata) VALUES (?)", proj
+echo "name: ", db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["name"]
+echo "language: ", db.query("SELECT json_extract(metadata, '$.language') FROM projects LIMIT 1", string)
+
+# name: skulite
+# language: nim
 ```
 † See all `bindParam` and `getColumn` implementations in [stmtops.nim](skulite/stmtops.nim).
 
