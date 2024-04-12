@@ -16,4 +16,4 @@ jobs:
       with:
         nim-version: ${{ matrix.nim-version }}
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-    - run: nimble test --mm:arc -y
+    - run: nimble test -d:staticSqlite --mm:arc -y
