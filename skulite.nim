@@ -1,12 +1,4 @@
 ## SQlite wrapper module.
-runnableExamples:
-  # Prints "Hello, world!"
-  let db = openDatabase(":memory:")
-  db.exec "CREATE TABLE IF NOT EXISTS example(words TEXT) STRICT"
-  db.exec "INSERT INTO example (words) VALUES (?),(?)", ("Hello,", "world!")
-  for word in db.query("SELECT words FROM example", string):
-    echo word
-
 
 import std/[macros, options, typetraits]
 import skulite/[sqlite3c, shim]
