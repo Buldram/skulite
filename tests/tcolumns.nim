@@ -11,7 +11,7 @@ block ordinals:
       discard db.query("SELECT ints FROM test LIMIT 1", uint32)
 
 block floats:
-  var db = openDatabase(":memory:")
+  let db = openDatabase(":memory:")
   db.exec "CREATE TABLE IF NOT EXISTS test(floats REAL) STRICT"
   db.exec "INSERT INTO test (floats) VALUES (?)", 1.0
   doAssert db.query("SELECT floats FROM test LIMIT 1", float64) == 1.0
@@ -133,7 +133,7 @@ block options:
       of 2: doAssert x.isNone()
 
   block blobs:
-    var db = openDatabase(":memory:")
+    let db = openDatabase(":memory:")
     db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
     db.exec "INSERT INTO test (blobs) VALUES (?),(?),(?)", ([byte 1, 2, 3], newSeq[byte](), nil)
     var i: range[0..2]
