@@ -102,12 +102,12 @@ proc bindBlob(stmt: Statement; index: int32; val: pointer; len: int32; destructo
   # sqlite3_bind_blob64 does exist and accepts uint64 for len, but SQLite does not support blob values of len > int32.high (about 2.1GiB)
   sqliteCheck sqlite3_bind_blob(stmt, index, val, len, destructor)
 
-when NimMajor > 1 or NimMinor > 6 and NimPatch > 8:
-  proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
-else:
+when (NimMajor, NimMinor, NimPatch) <= (1, 6, 8):
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
     bindBlob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+else:
+  proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
+    bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[ptr UncheckedArray[byte]]): T {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
