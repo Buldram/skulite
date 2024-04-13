@@ -7,4 +7,4 @@ srcDir       = "."
 installFiles = @["skulite.nim", "LICENSE.txt"]
 installDirs  = @["skulite"]
 
-requires "nim >= 1.6.10"
+requires "nim >= 1.6.0"

@@ -1,7 +1,7 @@
 # Skulite
 
 High-level [SQLite](https://www.sqlite.org) bindings for [Nim](https://nim-lang.org).  
-Requires Nim 1.6.10 or greater and ARC/ORC memory management.
+Requires Nim 1.6.0 or greater and ARC/ORC memory management.
 
 ## Examples
 
