@@ -19,7 +19,7 @@ for word in db.query("SELECT words FROM greeting", string):
 # World!
 ```
 
-#### Serializing a [table](https://nim-lang.org/docs/tables.html) as [JSON](https://www.sqlite.org/json1.html) using [Sunny](https://github.com/guzba/sunny)
+#### Storing a hash table as [JSON](https://www.sqlite.org/json1.html) using [Sunny](https://github.com/guzba/sunny)
 ```nim
 import pkg/[skulite, sunny],
        std/tables
