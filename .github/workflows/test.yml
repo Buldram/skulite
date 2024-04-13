@@ -32,15 +32,10 @@ jobs:
 
     - name: Run tests with nimble test
       if: ${{ matrix.nim-version == '1.4.2' || matrix.nim-version == '1.4.x' || matrix.nim-version == '1.6.0' }}
-      shell: bash
       run: |
-        nimble test -y --gc:arc -d:staticSqlite & a=$1
-        nimble test -y --gc:orc -d:staticSqlite & b=$!
-        nimble test -y -d:release --gc:arc -d:staticSqlite & c=$!
-        nimble test -y -d:release --gc:orc -d:staticSqlite & d=$!
-        nimble test -y -d:danger --gc:arc -d:staticSqlite & e=$!
-        nimble test -y -d:danger --gc:orc -d:staticSqlite & f=$!
-        for pid in $a $b $c $d $e $f; do
-          wait $pid || FAIL=$?
-        done
-        [ -z $FAIL ] || exit $FAIL
+        nimble test -y --gc:arc -d:staticSqlite
+        nimble test -y --gc:orc -d:staticSqlite
+        nimble test -y -d:release --gc:arc -d:staticSqlite
+        nimble test -y -d:release --gc:orc -d:staticSqlite
+        nimble test -y -d:danger --gc:arc -d:staticSqlite
+        nimble test -y -d:danger --gc:orc -d:staticSqlite
