@@ -18,12 +18,14 @@ jobs:
         nim-version: ${{ matrix.nim-version }}
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - if: ${{ matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel') }}
+    - name: Run tests with balls
+      if: ${{ matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel') }}
       run: |
         nimble install -y https://github.com/disruptek/balls
-        balls -d:staticSqlite -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc
+        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite 
 
-    - if: ${{ !(matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel')) }}
+    - name: Run tests with balls@v3
+      if: ${{ !(matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel')) }}
       run: |
         nimble install -y https://github.com/disruptek/balls@#v3
-        balls -d:staticSqlite -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc
+        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite 
