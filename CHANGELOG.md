@@ -4,11 +4,11 @@
 
 ## 1.2.2 - 13 April 2024
 
-* Support for Nim 1.4.2.
+* Support for Nim 1.4.2
 
 ## 1.2.1 - 13 April 2024
 
-* Fix bug in `getColumn(T: typedesc[Option])`.
+* Fix bug in `getColumn(T: typedesc[Option])`
 
 ## 1.2.0 - 12 April 2024
 
