@@ -22,10 +22,10 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel') }}
       run: |
         nimble install -y https://github.com/disruptek/balls
-        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite 
+        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite
 
     - name: Run tests with balls@v3
       if: ${{ !(matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel')) }}
       run: |
         nimble install -y https://github.com/disruptek/balls@#v3
-        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite 
+        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite

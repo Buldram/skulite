@@ -151,7 +151,7 @@ proc columnIsNil*(stmt: Statement; index: Natural32): bool {.inline.} =
   getColumnType(stmt, index) == SqliteNull
 
 proc getColumn*[V](stmt: Statement; index: Natural32; T: typedesc[Option[V]]): T {.inline.} =
-  if columnIsNil(stmt, 0):
+  if columnIsNil(stmt, index):
     none V
   else:
     some getColumn(stmt, index, V)
