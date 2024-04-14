@@ -2,6 +2,8 @@
 
 ## 1.2.x - Unreleased
 
+## 1.2.3 - 14 April 2024
+
 * Fix unpack when T is a tuple.
 
 ## 1.2.2 - 13 April 2024
