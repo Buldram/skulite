@@ -4,7 +4,7 @@
 
 ## 1.2.3 - 14 April 2024
 
-* Fix unpack when T is a tuple.
+* Fix `unpack` when `T` is a `tuple`
 
 ## 1.2.2 - 13 April 2024
 
@@ -21,7 +21,7 @@
 ## 1.1.0 - 12 April 2024
 
 * Rename `open` and `prepare` to `reopen` and `reprepare`
-* Fix memory leaks
+* Fix a memory leak in `explain` and another in the test suite
 
 ## 1.0.0 - 9 April 2024
 

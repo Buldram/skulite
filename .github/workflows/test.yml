@@ -11,24 +11,32 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Get Date
-      id: get-date
-      run: echo "::set-output name=date::$(date "+%Y-%m-%d")"
-      shell: bash
+    - uses: actions/checkout@v4
 
     - name: Cache choosenim
-      id: cache-choosenim
-      uses: actions/cache@v3
+      if: ${{ matrix.nim-version != 'devel' }}
+      uses: actions/cache@v4
+      with:
+        path: ~/.choosenim
+        key: ${{ runner.os }}-choosenim-${{ matrix.nim-version }}
+        restore-keys: ${{ runner.os }}-choosenim-${{ matrix.nim-version }}
+
+    - name: Get date
+      if: ${{ matrix.nim-version == 'devel' }}
+      id: get-date
+      run: echo "date=$(date "+%Y-%m-%d")" > $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Cache choosenim devel
+      if: ${{ matrix.nim-version == 'devel' }}
+      uses: actions/cache@v4
       with:
         path: ~/.choosenim
         key: ${{ runner.os }}-choosenim-${{ matrix.nim-version }}-${{ steps.get-date.outputs.date }}
         restore-keys: ${{ runner.os }}-choosenim-${{ matrix.nim-version }}-
 
     - name: Cache nimble
-      id: cache-nimble
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.nimble
         key: ${{ runner.os }}-nimble-${{ hashFiles('*.nimble') }}
