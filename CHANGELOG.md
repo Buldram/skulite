@@ -2,6 +2,8 @@
 
 ## 1.2.x - Unreleased
 
+* Fix unpack when T is a tuple.
+
 ## 1.2.2 - 13 April 2024
 
 * Support for Nim 1.4.2

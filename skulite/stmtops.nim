@@ -118,10 +118,8 @@ template getColumn*(stmt: Statement; index: Natural32; T: typedesc[openArray[byt
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])
   let len =
-    if unlikely(isNil(p)):
-      0
-    else:
-      stmt.getColumnLen(index)
+    if unlikely(isNil(p)): 0
+    else: stmt.getColumnLen(index)
   p.toOpenArray(0, len-1)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[seq[byte]]): T {.inline.} =

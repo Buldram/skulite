@@ -249,8 +249,10 @@ template step*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFla
 
 proc unpack*[t: tuple](stmt: Statement; T: typedesc[t]): t {.inline.} =
   when T isnot tuple[]:
-    for i, field in enumerate result.fields:
+    var i = 0'i32
+    for field in result.fields:
       field = getColumn(stmt, i, typeof field)
+      inc i
 
 template unpack*[t](stmt: Statement; T: typedesc[t]): t =
   getColumn(stmt, 0, T)
