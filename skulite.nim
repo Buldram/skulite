@@ -247,15 +247,14 @@ template step*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFla
   result
 
 
-proc unpack*[t: tuple](stmt: Statement; T: typedesc[t]): t {.inline.} =
-  when T isnot tuple[]:
+proc unpack*[t](stmt: Statement; T: typedesc[t]): t {.inline.} =
+  when T isnot tuple:
+    getColumn(stmt, 0, T)
+  elif T isnot tuple[]:
     var i = 0'i32
     for field in result.fields:
       field = getColumn(stmt, i, typeof field)
       inc i
-
-template unpack*[t](stmt: Statement; T: typedesc[t]): t =
-  getColumn(stmt, 0, T)
 
 
 template query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto = (); flags: set[PrepareFlag] = {}): t =
