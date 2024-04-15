@@ -107,8 +107,8 @@ proc step*(stmt: Statement): bool {.inline, discardable.} =
   ## Evaluate or "step" an SQL `stmt`. Returns `true` if the evaluation returned a row of data.
   let ret = sqlite3_step(stmt)
   case ret
-  of SQLITE_ROW: true
-  of SQLITE_DONE: false
+  of SQLITE_ROW: return true
+  of SQLITE_DONE: return false
   else: raiseSqliteError ret
 
 proc exec*(stmt: Statement) {.inline.} =

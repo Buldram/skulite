@@ -6,7 +6,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        nim-version: ['1.4.2', '1.4.x', '1.6.0', '1.6.x', '2.0.0', 'stable', 'devel']
+        nim-version: ['1.4.0', '1.4.x', '1.6.0', '1.6.x', '2.0.0', 'stable', 'devel']
 
     runs-on: ${{ matrix.os }}
 
@@ -54,13 +54,13 @@ jobs:
         balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite
 
     - name: Run tests with balls@v3
-      if: ${{ !(matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel')) && matrix.nim-version != '1.4.2' && matrix.nim-version != '1.4.x' && matrix.nim-version != '1.6.0' }}
+      if: ${{ !(matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel')) && matrix.nim-version != '1.4.0' && matrix.nim-version != '1.4.x' && matrix.nim-version != '1.6.0' }}
       run: |
         nimble install -y https://github.com/disruptek/balls@#v3
         balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite
 
     - name: Run tests with nimble test
-      if: ${{ matrix.nim-version == '1.4.2' || matrix.nim-version == '1.4.x' || matrix.nim-version == '1.6.0' }}
+      if: ${{ matrix.nim-version == '1.4.0' || matrix.nim-version == '1.4.x' || matrix.nim-version == '1.6.0' }}
       run: |
         nimble test -y --gc:arc -d:staticSqlite
         nimble test -y --gc:orc -d:staticSqlite
