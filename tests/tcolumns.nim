@@ -101,7 +101,6 @@ block blobs:
     var sEmpty = newSeq[byte](); testInsert(sEmpty)
     const SEmpty = newSeq[byte](); testInsert(SEmpty)
     testInsert(newSeq[byte]().toOpenArray(0, -1))
-    
 
 type
   Test = object
