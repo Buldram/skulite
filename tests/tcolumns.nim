@@ -64,25 +64,44 @@ block strings:
 block blobs:
   var db: Database
 
-  template checkGetColumnMatches() =
-    let stmt = db.step("SELECT blobs FROM test LIMIT 1")
-    doAssert stmt[0, seq[byte]] == @[byte 1, 2, 3, 4, 5]
-    doAssert stmt[0, array[5, byte]] == [byte 1, 2, 3, 4, 5]
-    doAssert stmt[0, openArray[byte]] == [byte 1, 2, 3, 4, 5]
+  block counting:
+    template checkGetColumnMatches() =
+      let stmt = db.step("SELECT blobs FROM test LIMIT 1")
+      doAssert stmt[0, seq[byte]] == @[byte 1, 2, 3, 4, 5]
+      doAssert stmt[0, array[5, byte]] == [byte 1, 2, 3, 4, 5]
+      doAssert stmt[0, openArray[byte]] == [byte 1, 2, 3, 4, 5]
 
-  template testInsert(countup: typed) =
-    db.reopen(":memory:")
-    db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
-    db.exec "INSERT INTO test (blobs) VALUES (?)", countup
-    checkGetColumnMatches()
+    template testInsert(countup: typed) =
+      db.reopen(":memory:")
+      db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
+      db.exec "INSERT INTO test (blobs) VALUES (?)", countup
+      checkGetColumnMatches()
 
-  testInsert([byte 1, 2, 3, 4, 5])
-  var aCountup = [byte 1, 2, 3, 4, 5]; testInsert(aCountup)
-  const ACountup = [byte 1, 2, 3, 4, 5]; testInsert(ACountup)
-  testInsert(@[byte 1, 2, 3, 4, 5])
-  var sCountup = @[byte 1, 2, 3, 4, 5]; testInsert(sCountup)
-  const SCountup = @[byte 1, 2, 3, 4, 5]; testInsert(SCountup)
-  testInsert([byte 1, 2, 3, 4, 5].toOpenArray(0, 4))
+    testInsert([byte 1, 2, 3, 4, 5])
+    var aCountup = [byte 1, 2, 3, 4, 5]; testInsert(aCountup)
+    const ACountup = [byte 1, 2, 3, 4, 5]; testInsert(ACountup)
+    testInsert(@[byte 1, 2, 3, 4, 5])
+    var sCountup = @[byte 1, 2, 3, 4, 5]; testInsert(sCountup)
+    const SCountup = @[byte 1, 2, 3, 4, 5]; testInsert(SCountup)
+    testInsert([byte 1, 2, 3, 4, 5].toOpenArray(0, 4))
+
+  block zero:
+    template testInsert(empty: typed) =
+      db.reopen(":memory:")
+      db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
+      db.exec "INSERT INTO test (blobs) VALUES (?)", empty
+      let stmt = db.step("SELECT blobs FROM test LIMIT 1")
+      when empty is array[0, byte]: doAssert stmt[0, seq[byte]].len == 0
+      else: doAssert stmt.columnIsNil(0)
+
+    testInsert(array[0, byte]([]))
+    var aEmpty: array[0, byte]; testInsert(aEmpty)
+    const AEmpty: array[0, byte] = []; testInsert(AEmpty)
+    testInsert(newSeq[byte]())
+    var sEmpty = newSeq[byte](); testInsert(sEmpty)
+    const SEmpty = newSeq[byte](); testInsert(SEmpty)
+    testInsert(newSeq[byte]().toOpenArray(0, -1))
+    
 
 type
   Test = object

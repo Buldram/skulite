@@ -102,11 +102,14 @@ proc bindBlob(stmt: Statement; index: int32; val: pointer; len: int32; destructo
   # sqlite3_bind_blob64 does exist and accepts uint64 for len, but SQLite does not support blob values of len > int32.high (about 2.1GiB)
   sqliteCheck sqlite3_bind_blob(stmt, index, val, len, destructor)
 
-when (NimMajor, NimMinor, NimPatch) <= (1, 6, 8):
+when (NimMajor, NimMinor, NimPatch) > (1, 6, 8):
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    bindBlob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+    bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 else:
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
+    bindBlob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+
+  proc bindParam*[N](stmt: Statement; index: Positive32; val: array[N, byte]) {.inline.} =
     bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[ptr UncheckedArray[byte]]): T {.inline.} =
@@ -126,13 +129,14 @@ proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[seq[byte]]): T {.
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])
   if likely(not isNil(p)):
     let len = stmt.getColumnLen(index)
-    result = newSeqUninit[byte](len)
-    copyMem(addr result[0], p, len)
+    if likely len > 0:
+      result = newSeqUninit[byte](len)
+      copyMem(addr result[0], p, len)
 
 proc getColumn*[N](stmt: Statement; index: Natural32; T: typedesc[array[N, byte]]): T {.inline.} =
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])
   if likely(not isNil(p)):
-    copyMem(addr result[0], p, 1 + N.high - N.low)
+    copyMem(addr result[0], p, result.len)
 
 
 #                                             Option

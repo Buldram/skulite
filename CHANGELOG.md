@@ -2,6 +2,8 @@
 
 ## 1.2.x - Unreleased
 
+* Adjust getColumn(T: seq[byte]) for 0-length blobs
+* Bind array[0, byte] consistently on Nim <= 1.6.8
 * Support for Nim 1.4.0
 * Update SQLite source to version 3.45.3
 

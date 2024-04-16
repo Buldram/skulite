@@ -35,7 +35,7 @@ proc importcSqliteImpl(name, body: NimNode): NimNode =
     if name.kind == nnkEmpty:
       ident "importc"
     else:
-      nnkExprColonExpr.newtree(ident "importc", name)
+      nnkExprColonExpr.newTree(ident "importc", name)
   body.addPragma ident "cdecl"
   when not staticSqlite:
     body.addPragma nnkExprColonExpr.newTree(ident "dynlib", newLit sqliteLib)
