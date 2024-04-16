@@ -2,6 +2,8 @@
 
 ## 1.2.x - Unreleased
 
+## 1.2.4 - 15 April 2024
+
 * Support for Nim 1.2.0
 * Adjust getColumn(T: seq[byte]) for 0-length blobs
 * Bind array[0, byte] consistently on Nim <= 1.6.8
