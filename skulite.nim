@@ -217,20 +217,21 @@ proc lastStatement*(db: Database; stmt: Statement = nil): Statement =
 
 #                                  Readable high-level interface
 
-macro bindParams*(stmt: Statement; params: tuple; start: Positive32 = 1) =
-  result = newStmtList()
-  case params.kind
-  of nnkTupleConstr: # Tuple literal, ideal as we can bind static values even if not all values in the tuple are static
+macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
+  if params.kind == nnkTupleConstr: # Tuple literal, ideal as we can bind static values even if not all values in the tuple are static
+    result = newStmtList()
     for i in 0 ..< params.len:
       result.add newCall("bindParam", stmt, infix(start, "+", newLit(i)), params[i])
-  of nnkSym: # Variable bound to a tuple
-    for i in 0 ..< params.getType().len-1:
-      result.add newCall("bindParam", stmt, infix(start, "+", newLit(i)), nnkBracketExpr.newTree(params, newLit(i)))
   else:
-    error("Expected one of " & ${nnkTupleConstr, nnkSym} & ", got " & $params.kind, params)
-
-template bindParams*(stmt: Statement; param: auto; start: Positive32 = 1) =
-  bindParam(stmt, start, param)
+    result = quote do:
+      when `params` is tuple: # Variable bound to a tuple
+        when `params` isnot tuple[]:
+          var i = `start`
+          for param in `params`:
+            bindParam(`stmt`, i, param)
+            inc i
+      else:
+        bindParam(`stmt`, `start`, `params`)
 
 template prepStatement*(db: Database; sql: auto; params: auto; flags: set[PrepareFlag] = {}): StatementWrapper =
   # Template so that we can pass a tuple-literal to `bindParams`
