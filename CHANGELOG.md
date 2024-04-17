@@ -2,6 +2,8 @@
 
 ## 1.2.x - Unreleased
 
+* Make `-d:static` imply `-d:staticSqlite`
+
 ## 1.2.4 - 15 April 2024
 
 * Support for Nim 1.2.0

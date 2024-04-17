@@ -1,7 +1,8 @@
 import std/macros
 
-const staticSqlite {.booldefine.} = defined(windows)
-## Whether to statically compile and bundle SQLite with the application.
+const `static` {.booldefine.} = defined(windows)
+const staticSqlite* {.booldefine.} = `static`
+## Whether to bundle a copy of SQLite instead of searching for a dynamic library at runtime.
 when not staticSqlite:
   from std/strutils import `%`
   from std/os import DynlibFormat
