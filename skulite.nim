@@ -224,14 +224,13 @@ macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
       result.add newCall("bindParam", stmt, infix(start, "+", newLit(i)), params[i])
   else:
     result = quote do:
-      when `params` is tuple: # Variable bound to a tuple
-        when `params` isnot tuple[]:
-          var i = `start`
-          for param in `params`:
-            bindParam(`stmt`, i, param)
-            inc i
-      else:
+      when `params` isnot tuple:
         bindParam(`stmt`, `start`, `params`)
+      elif `params` isnot tuple[]:
+        var i = `start`
+        for param in `params`:
+          bindParam(`stmt`, i, param)
+          inc i
 
 template prepStatement*(db: Database; sql: auto; params: auto; flags: set[PrepareFlag] = {}): StatementWrapper =
   # Template so that we can pass a tuple-literal to `bindParams`
@@ -297,7 +296,7 @@ proc setExplain*(stmt: Statement; mode: bool|range[0'i8 .. 2'i8] = true) {.inlin
   if stmt.busy: restart stmt
   sqliteCheck sqlite3_stmt_explain(stmt, int32 mode)
 
-proc getExplanation(stmt: Statement): seq[seq[string]] =
+proc getExplanation(stmt: Statement): seq[seq[string]] {.inline.} =
   let origExplain = stmt.isExplain
   if origExplain != 1:
     setExplain(stmt)
@@ -314,7 +313,7 @@ proc getExplanation(stmt: Statement): seq[seq[string]] =
   if origExplain != 1:
     setExplain(stmt, origExplain)
 
-proc echoTable(data: seq[seq[string]]) =
+proc echoTable(data: seq[seq[string]]) {.inline.} =
   if likely data.len > 0:
     var maxWidths = newSeqUninit[int](data[0].len)
     for i in 0 .. data[0].high:
