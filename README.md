@@ -1,6 +1,6 @@
 # Skulite
 
-High-level [SQLite](https://www.sqlite.org) bindings for [Nim](https://nim-lang.org).  
+High-level [SQLite](https://www.sqlite.org) bindings for [Nim](https://nim-lang.org).
 
 ## Examples
 
@@ -40,8 +40,6 @@ echo "lang: ", db.query("SELECT json_extract(metadata, '$.language') FROM projec
 # lang: nim
 ```
 † See all `bindParam` and `getColumn` implementations in [stmtops.nim](skulite/stmtops.nim).
-
-####
 
 ## Notes
 

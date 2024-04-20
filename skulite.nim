@@ -226,7 +226,7 @@ macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
     result = quote do:
       when `params` isnot tuple:
         bindParam(`stmt`, `start`, `params`)
-      elif `params` isnot tuple[]:
+      elif `params` isnot tuple[]: # isnot empty tuple
         var i = `start`
         for param in `params`:
           bindParam(`stmt`, i, param)
