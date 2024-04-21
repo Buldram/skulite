@@ -2,6 +2,8 @@
 
 ## 1.2.x - Unreleased
 
+* Add `lastInsertRowID`
+* Add a `bindParam` for named parameters
 * Make `-d:static` imply `-d:staticSqlite`
 
 ## 1.2.4 - 15 April 2024

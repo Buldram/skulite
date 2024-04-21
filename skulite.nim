@@ -227,7 +227,11 @@ func readonly*(stmt: Statement): bool {.inline.} =
 func busy*(stmt: Statement): bool {.inline.} =
   bool(sqlite3_stmt_busy(stmt))
 
-proc lastStatement*(db: Database; stmt: Statement = nil): Statement =
+func lastInsertRowID*(db: Database): int64 {.inline.} =
+  ## Returns the ROWID of the most recent insert, or 0 if there has never been a successful insert into a ROWID table on this connection.
+  sqlite3_last_insert_rowid(db)
+
+proc lastStatement*(db: Database; stmt: Statement = nil): Statement {.inline.} =
   ## Returns the last `Statement` prepared before `stmt`, or if `stmt` is `nil`, the last `Statement` prepared.
   sqlite3_next_stmt(db, stmt)
 

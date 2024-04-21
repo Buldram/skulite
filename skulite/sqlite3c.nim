@@ -218,6 +218,7 @@ else:
   proc sqlite3_open_v2*(filename: cstring; db: var ptr sqlite3; flags: set[OpenFlag]; vfs: cstring): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_close_v2*(db: ptr sqlite3): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_db_cacheflush*(db: ptr sqlite3): ResultCode {.importcSqlite, sideEffect.}
+func sqlite3_last_insert_rowid*(db: ptr sqlite3): int64 {.importcSqlite.}
 
 when defined(nimHasOutParams):
   proc sqlite3_prepare_v3*(db: ptr sqlite3; sql: cstring; len: int32; prepFlags: set[PrepareFlag]; stmt: out ptr sqlite3_stmt; tail: ptr cstring): ResultCode {.importcSqlite, sideEffect.}

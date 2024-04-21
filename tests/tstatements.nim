@@ -12,8 +12,10 @@ doAssert not s1.readonly
 doAssert not s1.busy
 doAssert s1.isExplain == 0
 explain(s1)
+doAssert db.lastInsertRowID == 0
 exec s1
 doAssert db.lastStatement() == s1
+doAssert db.lastInsertRowID == 2
 
 let s2 = db.prepStatement("SELECT words FROM example LIMIT 1")
 doAssert db.lastStatement(s2) == s1

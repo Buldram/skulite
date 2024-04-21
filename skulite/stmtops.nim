@@ -35,7 +35,7 @@ proc bindParam*(stmt: Statement; index: Positive32; val: float|float64) {.inline
   sqliteCheck sqlite3_bind_double(stmt, index, val)
 
 template bindParam*(stmt: Statement; index: Positive32; val: float32) =
-  bindParam(stmt, index, float64 val)
+  bindParam(stmt, index, float64(val))
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[float|float64]): T {.inline.} =
   result = sqlite3_column_double(stmt, index)
