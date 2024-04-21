@@ -246,6 +246,7 @@ proc sqlite3_bind_double*(stmt: ptr sqlite3_stmt; index: int32; val: float64): R
 proc sqlite3_bind_text*(stmt: ptr sqlite3_stmt; index: int32; val: cstring; len: int32; destructor: sqlite3_destructor): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_bind_blob*(stmt: ptr sqlite3_stmt; index: int32; val: pointer; len: int32; destructor: sqlite3_destructor): ResultCode {.importcSqlite, sideEffect.}
 proc sqlite3_bind_null*(stmt: ptr sqlite3_stmt; index: int32): ResultCode {.importcSqlite, sideEffect.}
+proc sqlite3_bind_parameter_index*(stmt: ptr sqlite3_stmt, name: cstring): int32 {.importcSqlite, sideEffect.}
 
 proc sqlite3_column_int*(stmt: ptr sqlite3_stmt; index: int32): int32 {.importcSqlite, sideEffect.}
 proc sqlite3_column_int64*(stmt: ptr sqlite3_stmt; index: int32): int64 {.importcSqlite, sideEffect.}

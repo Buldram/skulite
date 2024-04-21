@@ -140,19 +140,36 @@ type
   Positive32* = range[1'i32 .. high(int32)] # bindParam indexes
   Natural32* = range[0'i32 .. high(int32)]  # getColumn indexes
 
-macro `[]=`*(stmt: Statement; index: Positive32; args: varargs[untyped]) =
-  ## Bind `val` to the `index` parameter (?) of `stmt`, index starts at 1.
-  ## Alias for `bindParam`, `args` passes any extra arguments to `bindParam`.
+include skulite/stmtops # Includes implementations of `bindParam` and `getColumn` for different value types
+
+macro `[]=`*(stmt: Statement; index: auto; args: varargs[untyped]) =
+  ## Bind a value to the parameter at `index`, index starts at 1.
+  ## Alias for `bindParam`, `args` passes any extra arguments through.
   result = newCall("bindParam", stmt, index, args[^1])
   for i in 0 ..< args.len-1: result.add args[i]
 
-macro `[]`*[t](stmt: Statement; index: Natural32; T: typedesc[t]; other: varargs[untyped]): t =
+macro `[]`*[t](stmt: Statement; index: auto; T: typedesc[t]; other: varargs[untyped]): t =
   ## Get a value of type `T` from `stmt` at column `index`.
-  ## Alias for `getColumn`, `other` passes any extra arguments to `getColumn`.
+  ## Alias for `getColumn`, `other` passes any extra arguments through.
   result = newCall("getColumn", stmt, index, T)
   for arg in other: result.add arg
 
-include skulite/stmtops # Includes implementations of `bindParam` and `getColumn` for different value types
+template paramIndex*(stmt: Statement; name: cstring): Natural32 =
+  ## Get the index of a named parameter or 0 if not found.
+  sqlite3_bind_parameter_index(stmt, name)
+
+template paramIndex*(stmt: Statement; name: string): Natural32 =
+  ## Get the index of a named parameter or 0 if not found.
+  paramIndex(stmt, cstring name)
+
+macro bindParam*(stmt: Statement; name: cstring|string; val: typed; other: varargs[untyped]) =
+  ## Bind `val` to a named parameter.
+  ## `other` passes any extra arguments through.
+  result = quote do:
+    let index = paramIndex(`stmt`, `name`)
+    if unlikely index == 0: raise newException(SqliteError, "Named parameter not found")
+    bindParam(`stmt`, index, `val`)
+  for arg in other: result[^1].add arg
 
 proc restart*(stmt: Statement) {.inline.} =
   ## Reset a statement to the beginning of its program, ready to be re-executed.

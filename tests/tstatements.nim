@@ -2,9 +2,10 @@ import ../skulite
 
 var db = openDatabase(":memory:")
 db.exec "CREATE TABLE IF NOT EXISTS example(words TEXT) STRICT"
-let s1 = db.prepStatement("INSERT INTO example (words) VALUES (?),(?)", ("Hello,", "world!"))
-doAssert s1.sql == "INSERT INTO example (words) VALUES (?),(?)"
-doAssert s1.expandedSql == "INSERT INTO example (words) VALUES ('Hello,'),('world!')"
+let s1 = db.prepStatement("INSERT INTO example (words) VALUES (?),(:second)", "Hello,")
+s1[":second"] = "World!"
+doAssert s1.sql == "INSERT INTO example (words) VALUES (?),(:second)"
+doAssert s1.expandedSql == "INSERT INTO example (words) VALUES ('Hello,'),('World!')"
 doAssert s1.numParams == 2
 doAssert s1.numColumns == 0
 doAssert not s1.readonly
