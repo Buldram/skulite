@@ -20,7 +20,7 @@ func sqliteCheck*(ret: ResultCode) {.inline, raises: [SqliteError].} =
   if unlikely ret != SQLITE_OK: raiseSqliteError(ret)
 
 
-# We have "wrapped" objects for destructors but this modules' procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
+# We have "wrapped" objects for destructors but this module's procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
 
 type
   Database* = ptr sqlite3
@@ -254,7 +254,7 @@ macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
           inc i
 
 template prepStatement*(db: Database; sql: auto; params: auto; flags: set[PrepareFlag] = {}): StatementWrapper =
-  # Template so that we can pass a tuple-literal to `bindParams`
+  # Template so that we can pass a tuple literal to `bindParams`
   let result = prepStatement(db, sql, flags)
   result.bindParams(params)
   result

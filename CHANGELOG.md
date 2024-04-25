@@ -2,6 +2,7 @@
 
 ## 1.2.x - Unreleased
 
+* Add `{.raises: [].}` to `sqlite3_destructor` type
 * Add `lastInsertRowID`
 * Add a `bindParam` for named parameters
 * Make `-d:static` imply `-d:staticSqlite`

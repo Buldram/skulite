@@ -3,11 +3,7 @@ import std/macros
 const `static` {.booldefine.} = defined(windows)
 const staticSqlite* {.booldefine.} = `static`
 ## Whether to bundle a copy of SQLite instead of searching for a dynamic library at runtime.
-when not staticSqlite:
-  from std/strutils import `%`
-  from std/os import DynlibFormat
-  const sqliteLib {.strdefine.} = DynlibFormat % "sqlite3"
-else:
+when staticSqlite:
   const sqliteThreadsafe {.booldefine.} = compileOption("threads")
     ## Measurable performance impact, but with it disabled SQLite can only be used on a single thread at a time.
   const sqliteCompFlags {.strdefine.} = (func: string =
@@ -30,6 +26,10 @@ else:
     elif defined(danger):
       result.add " -DSQLITE_MAX_EXPR_DEPTH=0")()
   {.compile("sqlite3.c", sqliteCompFlags).}
+else:
+  from std/strutils import `%`
+  from std/os import DynlibFormat
+  const sqliteLib {.strdefine.} = DynlibFormat % "sqlite3"
 
 proc importcSqliteImpl(name, body: NimNode): NimNode =
   body.addPragma:
@@ -53,7 +53,7 @@ type
   sqlite3* {.incompleteStruct.} = object
   sqlite3_stmt* {.incompleteStruct.} = object
   sqlite3_value* {.incompleteStruct.} = object
-  sqlite3_destructor* = proc (x: pointer) {.cdecl, gcsafe.}
+  sqlite3_destructor* = proc (x: pointer) {.cdecl, gcsafe, raises: [].}
 
   ResultCode* {.size: sizeof(int32).} = enum
     SQLITE_OK,         ## Successful result
