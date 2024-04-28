@@ -211,8 +211,8 @@ else:
 proc `=copy`*[T](dest: var SqliteAlloc[T]; src: SqliteAlloc[T]) {.error.}
 proc `=dup`*[T](x: SqliteAlloc[T]): SqliteAlloc[T] {.error.}
 
-converter getVal*[T](sqliteAlloc: SqliteAlloc[T]): lent T {.inline.} = sqliteAlloc.val
-converter getVal*[T](sqliteAlloc: var SqliteAlloc[T]): var T {.inline.} = sqliteAlloc.val # XXX: Remove and make `extract` only similar to `isolate`?
+converter get*[T](sqliteAlloc: SqliteAlloc[T]): lent T {.inline.} = sqliteAlloc.val
+converter get*[T](sqliteAlloc: var SqliteAlloc[T]): var T {.inline.} = sqliteAlloc.val
 
 template `$`*[T](wrapped: SqliteAlloc[T]): string =
   $wrapped.val

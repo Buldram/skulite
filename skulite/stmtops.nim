@@ -47,14 +47,11 @@ template getColumn*(stmt: Statement; index: Natural32; T: typedesc[float32]): T 
 
 #                                              string
 
-proc bindText(stmt: Statement; index: Positive32; val: cstring; len: int32; destructor: sqlite3_destructor) {.inline.} =
-  sqliteCheck sqlite3_bind_text(stmt, index, val, len, destructor)
-
-template bindParam*(stmt: Statement; index: Positive32; val: cstring and (not string)) =
-  bindText(stmt, index, val, int32 val.len, SQLITE_TRANSIENT)
+proc bindParam*(stmt: Statement; index: Positive32; val: cstring and (not string)) {.inline.} =
+  sqliteCheck sqlite3_bind_text(stmt, index, val, int32 val.len, SQLITE_TRANSIENT)
 
 proc bindParam*(stmt: Statement; index: Positive32; val: openArray[char]) {.inline.} =
-  bindText(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+  sqliteCheck sqlite3_bind_text(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[cstring]): cstring {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -85,7 +82,7 @@ template getColumn*(stmt: Statement; index: Natural32; T: typedesc[openArray[cha
   let p = getColumn(stmt, index, cstring)
   let len =
     if unlikely(isNil(p)): 0
-    elif optForLong: stmt.getColumnLen(index)
+    elif optForLong: stmt.getColumnLen(index) # XXX: double eval `stmt`
     else: p.len
   p.toOpenArray(0, len-1)
 
@@ -122,7 +119,7 @@ template getColumn*(stmt: Statement; index: Natural32; T: typedesc[openArray[byt
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])
   let len =
     if unlikely(isNil(p)): 0
-    else: stmt.getColumnLen(index)
+    else: stmt.getColumnLen(index) # XXX: double eval `stmt`
   p.toOpenArray(0, len-1)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[seq[byte]]): T {.inline.} =
