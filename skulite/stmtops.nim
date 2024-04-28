@@ -95,19 +95,15 @@ proc getColumn*[N](stmt: Statement; index: Natural32; T: typedesc[array[N, char]
 
 #                                          "blobs" / bytes
 
-proc bindBlob(stmt: Statement; index: int32; val: pointer; len: int32; destructor: sqlite3_destructor) {.inline.} =
-  # sqlite3_bind_blob64 does exist and accepts uint64 for len, but SQLite does not support blob values of len > int32.high (about 2.1GiB)
-  sqliteCheck sqlite3_bind_blob(stmt, index, val, len, destructor)
-
 when (NimMajor, NimMinor, NimPatch) > (1, 6, 8):
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
+    sqliteCheck sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 else:
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    bindBlob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+    sqliteCheck sqlite3_bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
 
   proc bindParam*[N](stmt: Statement; index: Positive32; val: array[N, byte]) {.inline.} =
-    bindBlob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
+    sqliteCheck sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[ptr UncheckedArray[byte]]): T {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -168,7 +164,7 @@ type
     T isnot openArray|array # To avoid overloading conversions to openArray
  
 proc bindParam*[T: CopyMemable](stmt: Statement; index: Positive32; val: T) {.inline.} =
-  bindBlob(stmt, index, unsafeAddr val, int32 sizeof(T), SQLITE_TRANSIENT)
+  sqliteCheck sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 sizeof(T), SQLITE_TRANSIENT)
 
 proc getColumn*[t: CopyMemable](stmt: Statement; index: Natural32; T: typedesc[t]): t {.inline.} =
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])
