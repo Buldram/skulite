@@ -197,29 +197,23 @@ template numValues*(stmt: Statement): int32 =
   ## Same as `numColumns`, but returns 0 if `stmt` hasn't been stepped yet.
   sqlite3_data_count(stmt)
 
-type
-  SqliteAlloc[T: pointer|ptr|cstring] = object ## Wrapper with a `=destroy` hook which calls `sqlite3_free` on `val`
-    val*: T
-
+type SqliteCstring = distinct cstring
+## `cstring` with an `sqlite3_free` destructor
+proc `=copy`*(dest: var SqliteCstring; src: SqliteCstring) {.error.}
+proc `=dup`*(x: SqliteCstring): SqliteCstring {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*[T](x: SqliteAlloc[T]) =
-    sqlite3_free(x.val)
+  proc `=destroy`*(s: SqliteCstring) =
+    sqlite3_free(cstring s)
 else:
-  proc `=destroy`*[T](x: var SqliteAlloc[T]) =
-    sqlite3_free(x.val)
+  proc `=destroy`*(s: var SqliteCstring) =
+    sqlite3_free(cstring s)
+converter toCstring*(s: SqliteCstring): lent cstring {.inline.} = cstring(s)
+converter toCstring*(s: var SqliteCstring): var cstring {.inline.} = cstring(s)
+template `$`*(s: SqliteCstring): string = $(cstring s)
 
-proc `=copy`*[T](dest: var SqliteAlloc[T]; src: SqliteAlloc[T]) {.error.}
-proc `=dup`*[T](x: SqliteAlloc[T]): SqliteAlloc[T] {.error.}
-
-converter get*[T](sqliteAlloc: SqliteAlloc[T]): lent T {.inline.} = sqliteAlloc.val
-converter get*[T](sqliteAlloc: var SqliteAlloc[T]): var T {.inline.} = sqliteAlloc.val
-
-template `$`*[T](wrapped: SqliteAlloc[T]): string =
-  $wrapped.val
-
-template expandedSql*(stmt: Statement): SqliteAlloc[cstring] =
+template expandedSql*(stmt: Statement): SqliteCstring =
   ## Computes and returns the SQL text of `stmt` after parameter substitution.
-  SqliteAlloc[cstring](val: sqlite3_expanded_sql(stmt))
+  SqliteCstring(sqlite3_expanded_sql(stmt))
 
 template readonly*(stmt: Statement): bool =
   sqlite3_stmt_readonly(stmt)
