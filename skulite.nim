@@ -95,7 +95,7 @@ proc reprepare*(stmt: var Statement; db: Database; sql: openArray[char]; flags: 
   sqliteCheck sqlite3_finalize(stmt)
   sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, stmt, nil)
 
-func sql*(stmt: Statement): cstring {.inline.} =
+template sql*(stmt: Statement): cstring =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.
   sqlite3_sql(stmt)
 
@@ -118,7 +118,7 @@ proc exec*(stmt: Statement) {.inline.} =
     raiseSqliteError ret
 
 
-func db*(stmt: Statement): Database {.inline.} =
+template db*(stmt: Statement): Database =
   ## Returns the database connection to which `stmt` belongs.
   sqlite3_db_handle(stmt)
 
@@ -187,13 +187,13 @@ proc getColumnName*(stmt: Statement; index: Natural32): cstring {.inline.} =
   result = sqlite3_column_name(stmt, index)
   if unlikely isNil(result): checkForError(stmt)
 
-func numParams*(stmt: Statement): int32 {.inline.} =
+template numParams*(stmt: Statement): int32 =
   sqlite3_bind_parameter_count(stmt)
 
-func numColumns*(stmt: Statement): int32 {.inline.} =
+template numColumns*(stmt: Statement): int32 =
   sqlite3_column_count(stmt)
 
-func numValues*(stmt: Statement): int32 {.inline.} =
+template numValues*(stmt: Statement): int32 =
   ## Same as `numColumns`, but returns 0 if `stmt` hasn't been stepped yet.
   sqlite3_data_count(stmt)
 
@@ -217,21 +217,21 @@ converter getVal*[T](sqliteAlloc: var SqliteAlloc[T]): var T {.inline.} = sqlite
 template `$`*[T](wrapped: SqliteAlloc[T]): string =
   $wrapped.val
 
-proc expandedSql*(stmt: Statement): SqliteAlloc[cstring] {.inline.} =
+template expandedSql*(stmt: Statement): SqliteAlloc[cstring] =
   ## Computes and returns the SQL text of `stmt` after parameter substitution.
   SqliteAlloc[cstring](val: sqlite3_expanded_sql(stmt))
 
-func readonly*(stmt: Statement): bool {.inline.} =
-  bool(sqlite3_stmt_readonly(stmt))
+template readonly*(stmt: Statement): bool =
+  sqlite3_stmt_readonly(stmt)
 
-func busy*(stmt: Statement): bool {.inline.} =
-  bool(sqlite3_stmt_busy(stmt))
+template busy*(stmt: Statement): bool =
+  sqlite3_stmt_busy(stmt)
 
-func lastInsertRowID*(db: Database): int64 {.inline.} =
+template lastInsertRowID*(db: Database): int64 =
   ## Returns the ROWID of the most recent insert, or 0 if there has never been a successful insert into a ROWID table on this connection.
   sqlite3_last_insert_rowid(db)
 
-proc lastStatement*(db: Database; stmt: Statement = nil): Statement {.inline.} =
+template lastStatement*(db: Database; stmt: Statement = nil): Statement =
   ## Returns the last `Statement` prepared before `stmt`, or if `stmt` is `nil`, the last `Statement` prepared.
   sqlite3_next_stmt(db, stmt)
 

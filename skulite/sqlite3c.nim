@@ -50,9 +50,8 @@ macro importcSqlite*(body: untyped) =
 
 
 type
-  sqlite3* {.incompleteStruct.} = object
+  sqlite3* {.incompleteStruct.} = object # Database connection handle
   sqlite3_stmt* {.incompleteStruct.} = object
-  sqlite3_value* {.incompleteStruct.} = object
   sqlite3_destructor* = proc (x: pointer) {.cdecl, gcsafe, raises: [].}
 
   ResultCode* {.size: sizeof(int32).} = enum
