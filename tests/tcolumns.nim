@@ -114,8 +114,12 @@ type
     a: int
 converter toTest2(t: Test): Test2 = Test2(a: t.a)
 
-proc objects {.inline.} =
+when (NimMajor, NimMinor) > (1, 2):
+  const bomber = Test(a: 17, b: 'b')
+else:
+  let bomber = Test(a: 17, b: 'b')
 
+proc objects {.inline.} =
   proc bindParam(stmt: Statement; index: Positive32; val: Test2) {.inline, used.} =
     doAssert false, "Will never be reached as Test->Test2 is a conversion match, concepts are considered generic matches and have a higher precedence."
 
@@ -130,10 +134,6 @@ proc objects {.inline.} =
   doAssert db.query("SELECT blobs FROM test LIMIT 1", Test) == Test(a: 10, b: 'b')
 
   reset db
-  when (NimMajor, NimMinor) > (1, 2):
-    const bomber = Test(a: 17, b: 'b')
-  else:
-    let bomber = Test(a: 17, b: 'b')
   db.exec "INSERT INTO test (blobs) VALUES (?)", bomber
   doAssert db.query("SELECT blobs FROM test LIMIT 1", Test) == bomber
 
