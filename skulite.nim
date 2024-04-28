@@ -197,31 +197,24 @@ template numValues*(stmt: Statement): int32 =
   ## Same as `numColumns`, but returns 0 if `stmt` hasn't been stepped yet.
   sqlite3_data_count(stmt)
 
-when (NimMajor, NimMinor, NimPatch) >= (1, 4, 0):
-  type SqliteCstring = distinct cstring
-  ## `cstring` with an `sqlite3_free` destructor
-  template raw(s: SqliteCstring): cstring = cstring s
-  template sqliteCstring(cs: cstring): SqliteCstring = SqliteCstring(cs)
-else:
-  type SqliteCstring = object
-    raw*: cstring
-  template sqliteCstring(cs: cstring): SqliteCstring = SqliteCstring(raw: cs)
-
-proc `=copy`*(dest: var SqliteCstring; src: SqliteCstring) {.error.}
-proc `=dup`*(x: SqliteCstring): SqliteCstring {.error.}
+type
+  SqliteAlloc[T: pointer|ptr|cstring] = object ## Wrapper with a `=destroy` hook which calls `sqlite3_free`
+    val*: T
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(s: SqliteCstring) =
-    sqlite3_free(s.raw)
+  proc `=destroy`*[T](x: SqliteAlloc[T]) =
+    sqlite3_free(x.val)
 else:
-  proc `=destroy`*(s: var SqliteCstring) =
-    sqlite3_free(s.raw)
-converter toCstring*(s: SqliteCstring): lent cstring {.inline.} = s.raw
-converter toCstring*(s: var SqliteCstring): var cstring {.inline.} = s.raw
-template `$`*(s: SqliteCstring): string = $(s.raw)
+  proc `=destroy`*[T](x: var SqliteAlloc[T]) =
+    sqlite3_free(x.val)
+proc `=copy`*[T](dest: var SqliteAlloc[T]; src: SqliteAlloc[T]) {.error.}
+proc `=dup`*[T](x: SqliteAlloc[T]): SqliteAlloc[T] {.error.}
+converter get*[T](sqliteAlloc: SqliteAlloc[T]): lent T {.inline.} = sqliteAlloc.val
+converter get*[T](sqliteAlloc: var SqliteAlloc[T]): var T {.inline.} = sqliteAlloc.val
+template `$`*[T](wrapped: SqliteAlloc[T]): string = $wrapped.val
 
-template expandedSql*(stmt: Statement): SqliteCstring =
+template expandedSql*(stmt: Statement): SqliteAlloc[cstring] =
   ## Computes and returns the SQL text of `stmt` after parameter substitution.
-  sqliteCstring(sqlite3_expanded_sql(stmt))
+  SqliteAlloc[cstring](val: sqlite3_expanded_sql(stmt))
 
 template readonly*(stmt: Statement): bool =
   sqlite3_stmt_readonly(stmt)
