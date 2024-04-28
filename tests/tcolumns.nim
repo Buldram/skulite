@@ -1,7 +1,7 @@
 import ../skulite, ../skulite/sqlite3c
 import std/options
 
-block ordinals:
+proc ordinals {.inline.} =
   let db = openDatabase(":memory:")
   db.exec "CREATE TABLE IF NOT EXISTS test(ints INT) STRICT"
   db.exec "INSERT INTO test (ints) VALUES (?)", -1
@@ -9,14 +9,16 @@ block ordinals:
   when compileOption("rangechecks"):
     doAssertRaises(ValueError):
       discard db.query("SELECT ints FROM test LIMIT 1", uint32)
+ordinals()
 
-block floats:
+proc floats {.inline.} =
   let db = openDatabase(":memory:")
   db.exec "CREATE TABLE IF NOT EXISTS test(floats REAL) STRICT"
   db.exec "INSERT INTO test (floats) VALUES (?)", 1.0
   doAssert db.query("SELECT floats FROM test LIMIT 1", float64) == 1.0
+floats()
 
-block strings:
+proc strings {.inline.} =
   var db {.used.}: DatabaseWrapper
 
   template checkGetColumnMatches() =
@@ -60,9 +62,10 @@ block strings:
   db.exec "CREATE TABLE example(words TEXT) STRICT"
   db.exec "INSERT INTO example (words) VALUES (?)", ""
   doAssert db.query("SELECT words FROM example LIMIT 1", string) == ""
+strings()
 
-block blobs:
-  var db: Database
+proc blobs {.inline.} =
+  var db: DatabaseWrapper
 
   block counting:
     template checkGetColumnMatches() =
@@ -101,18 +104,18 @@ block blobs:
     var sEmpty = newSeq[byte](); testInsert(sEmpty)
     const SEmpty = newSeq[byte](); testInsert(SEmpty)
     testInsert(newSeq[byte]().toOpenArray(0, -1))
+blobs()
 
 type
   Test = object
     a: int
     b: char
-
   Test2 = object
     a: int
-
 converter toTest2(t: Test): Test2 = Test2(a: t.a)
 
-block objects:
+proc objects {.inline.} =
+
   proc bindParam(stmt: Statement; index: Positive32; val: Test2) {.inline, used.} =
     doAssert false, "Will never be reached as Test->Test2 is a conversion match, concepts are considered generic matches and have a higher precedence."
 
@@ -140,8 +143,9 @@ block objects:
   reset db
   db.exec "INSERT INTO test (blobs) VALUES (?)", Test(a: 10, b: 'b')
   doAssert db.query("SELECT blobs FROM test LIMIT 1", Test) == bomber
+objects()
 
-block options:
+proc options {.inline.} =
   block strings:
     var db = openDatabase(":memory:")
     db.exec "CREATE TABLE IF NOT EXISTS test(words TEXT) STRICT"
@@ -163,3 +167,4 @@ block options:
       of 0: doAssert x.get() == @[byte 1, 2, 3]; inc i
       of 1: doAssert x.isNone(); inc i
       of 2: doAssert x.isNone()
+options()

@@ -1,6 +1,6 @@
 import ../skulite
 
-block basic:
+proc basic {.inline.} =
   let db = openDatabase(":memory:")
   db.exec "CREATE TABLE IF NOT EXISTS greeting(words TEXT) STRICT"
   db.exec "INSERT INTO greeting (words) VALUES (?),(?)", ("Hello,", "World!")
@@ -9,11 +9,12 @@ block basic:
     case i
     of 0: doAssert word == "Hello,"; inc i
     of 1: doAssert word == "World!"
+basic()
 
 when NimMajor > 1:
   when (compiles do: import pkg/sunny):
     import std/tables
-    block sunny:
+    proc sunny {.inline.} =
       proc bindParam(stmt: Statement; index: Positive32; val: SomeTable) {.inline.} =
         bindParam(stmt, index, toJson val)
 
@@ -30,3 +31,4 @@ when NimMajor > 1:
       doAssert "nim" == db.query("SELECT json_extract(metadata, '$.language') FROM projects LIMIT 1", string)
       doAssert "blessing" == db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["license"]
       doAssert "blessing" == db.query("SELECT json_extract(metadata, '$.license') FROM projects LIMIT 1", string)
+    sunny()
