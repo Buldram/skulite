@@ -280,19 +280,19 @@ template transaction*(db: Database; body: typed) =
 
 from std/strutils import alignLeft
 
-proc isExplain*(stmt: Statement): range[0'i8 .. 2'i8] {.inline.} =
+template explainLevel*(stmt: Statement): range[0'i32..2'i32] =
   ## Returns 0 if `stmt` is not an "EXPLAIN" statement, 1 otherwise, and 2 if `stmt` is an "EXPLAIN QUERY PLAN" statement.
   sqlite3_stmt_isexplain(stmt)
 
-proc setExplain*(stmt: Statement; mode: bool|range[0'i8 .. 2'i8] = true) {.inline.} =
+proc setExplain*(stmt: Statement; mode: bool|range[0'i32..2'i32]|static[range[0..2]] = true) {.inline.} =
   ## Change the EXPLAIN flag for `stmt` so that it acts as if it was/wasn't prefixed with "EXPLAIN" or "EXPLAIN QUERY PLAN".
   if stmt.busy: restart stmt
   sqliteCheck sqlite3_stmt_explain(stmt, int32 mode)
 
 proc getExplanation(stmt: Statement): seq[seq[string]] {.inline.} =
-  let origExplain = stmt.isExplain
+  let origExplain = stmt.explainLevel
   if origExplain != 1:
-    setExplain(stmt)
+    setExplain(stmt, 1)
   let numColumns = stmt.numColumns
   result = @[newSeq[string](numColumns)]
   for i in 0 ..< numColumns:

@@ -11,7 +11,7 @@ proc tstatements {.inline.} =
   doAssert s1.numColumns == 0
   doAssert not s1.readonly
   doAssert not s1.busy
-  doAssert s1.isExplain == 0
+  doAssert s1.explainLevel == 0
   explain(s1)
   doAssert db.lastInsertRowID == 0
   exec s1

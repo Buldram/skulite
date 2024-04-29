@@ -233,7 +233,7 @@ func sqlite3_bind_parameter_count*(stmt: ptr Sqlite3_stmt): int32 {.importcSqlit
 func sqlite3_column_count*(stmt: ptr Sqlite3_stmt): int32 {.importcSqlite.}
 func sqlite3_data_count*(stmt: ptr Sqlite3_stmt): int32 {.importcSqlite.}
 func sqlite3_stmt_readonly*(stmt: ptr Sqlite3_stmt): bool {.importcSqlite.}
-func sqlite3_stmt_isexplain*(stmt: ptr Sqlite3_stmt): range[0'i8 .. 2'i8] {.importcSqlite.}
+func sqlite3_stmt_isexplain*(stmt: ptr Sqlite3_stmt): range[0'i32..2'i32] {.importcSqlite.}
 proc sqlite3_stmt_busy*(stmt: ptr Sqlite3_stmt): bool {.importcSqlite.}
 func sqlite3_db_handle*(stmt: ptr Sqlite3_stmt): ptr Sqlite3 {.importcSqlite.}
 func sqlite3_sql*(stmt: ptr Sqlite3_stmt): cstring {.importcSqlite.}
