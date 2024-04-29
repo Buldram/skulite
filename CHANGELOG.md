@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.2.x - Unreleased
+## 1.3.x - Unreleased
+
+## 1.3.0 - April 28 2024
 
 * Add `{.raises: [].}` to `sqlite3_destructor` type
 * Add `lastInsertRowID`
