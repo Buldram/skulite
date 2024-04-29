@@ -2,7 +2,7 @@
 #                                             Ordinals
 
 proc bindParam*(stmt: Statement; index: Positive32; val: SomeOrdinal) {.inline.} =
-  sqliteCheck sqlite3_bind_int64(stmt, index, cast[int64](val))
+  check sqlite3_bind_int64(stmt, index, cast[int64](val))
 
 template canConvert(val: int64; T: typedesc[SomeOrdinal]): bool =
   ## Whether `val` is convertable to the ordinal type `T`.
@@ -32,7 +32,7 @@ proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[SomeOrdinal]): T 
 #                                              float
 
 proc bindParam*(stmt: Statement; index: Positive32; val: float|float64) {.inline.} =
-  sqliteCheck sqlite3_bind_double(stmt, index, val)
+  check sqlite3_bind_double(stmt, index, val)
 
 template bindParam*(stmt: Statement; index: Positive32; val: float32) =
   bindParam(stmt, index, float64(val))
@@ -48,10 +48,10 @@ template getColumn*(stmt: Statement; index: Natural32; T: typedesc[float32]): T 
 #                                              string
 
 proc bindParam*(stmt: Statement; index: Positive32; val: cstring and (not string)) {.inline.} =
-  sqliteCheck sqlite3_bind_text(stmt, index, val, int32 val.len, SQLITE_TRANSIENT)
+  check sqlite3_bind_text(stmt, index, val, int32 val.len, SQLITE_TRANSIENT)
 
 proc bindParam*(stmt: Statement; index: Positive32; val: openArray[char]) {.inline.} =
-  sqliteCheck sqlite3_bind_text(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+  check sqlite3_bind_text(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[cstring]): cstring {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -97,13 +97,13 @@ proc getColumn*[N](stmt: Statement; index: Natural32; T: typedesc[array[N, char]
 
 when (NimMajor, NimMinor, NimPatch) > (1, 6, 8):
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    sqliteCheck sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
+    check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 else:
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    sqliteCheck sqlite3_bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+    check sqlite3_bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
 
   proc bindParam*[N](stmt: Statement; index: Positive32; val: array[N, byte]) {.inline.} =
-    sqliteCheck sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
+    check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[ptr UncheckedArray[byte]]): T {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -135,7 +135,7 @@ proc getColumn*[N](stmt: Statement; index: Natural32; T: typedesc[array[N, byte]
 #                                             Option
 
 proc bindParam*(stmt: Statement; index: Positive32; val: typeof(nil)) {.inline.} =
-  sqliteCheck sqlite3_bind_null(stmt, index)
+  check sqlite3_bind_null(stmt, index)
 
 proc bindParam*[T](stmt: Statement; index: Positive32; val: Option[T]) {.inline.} =
   if val.isNone: bindParam(stmt, index, nil)
@@ -164,7 +164,7 @@ type
     T isnot openArray|array # To avoid overloading conversions to openArray
  
 proc bindParam*[T: CopyMemable](stmt: Statement; index: Positive32; val: T) {.inline.} =
-  sqliteCheck sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 sizeof(T), SQLITE_TRANSIENT)
+  check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 sizeof(T), SQLITE_TRANSIENT)
 
 proc getColumn*[t: CopyMemable](stmt: Statement; index: Natural32; T: typedesc[t]): t {.inline.} =
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])

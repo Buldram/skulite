@@ -13,11 +13,11 @@ const checkSqliteUsage* {.booldefine.} = not defined(release)
 type
   SqliteError* = object of CatchableError
 
-func raiseSqliteError*(err: ResultCode) {.inline, noreturn.} =
-  raise newException(SqliteError, $sqlite3_errstr(err))
+template newException*(err: ResultCode): ref SqliteError =
+  newException(SqliteError, $sqlite3_errstr(err))
 
-func sqliteCheck*(ret: ResultCode) {.inline, raises: [SqliteError].} =
-  if unlikely ret != SQLITE_OK: raiseSqliteError(ret)
+func check*(ret: ResultCode) {.inline, raises: [SqliteError].} =
+  if unlikely ret != SQLITE_OK: raise newException(ret)
 
 
 # We have "wrapper" objects for destructors but this module's procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
@@ -37,7 +37,7 @@ else:
     discard sqlite3_close_v2(x.ptr)
 
 proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
-  sqliteCheck sqlite3_open_v2(filename, result.ptr, flags, vfs)
+  check sqlite3_open_v2(filename, result.ptr, flags, vfs)
 
 template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj =
   openDatabase(cstring filename, flags, vfs)
@@ -46,7 +46,7 @@ converter toPtr*(db: DatabaseObj): lent Database {.inline.} = db.ptr
 converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.ptr
 
 proc flush*(db: Database) {.inline.} =
-  sqliteCheck sqlite3_db_cacheflush(db)
+  check sqlite3_db_cacheflush(db)
 
 
 type
@@ -64,10 +64,10 @@ else:
     discard sqlite3_finalize(x.ptr)
 
 proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
-  sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.ptr, nil)
+  check sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.ptr, nil)
 
 proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
-  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result.ptr, nil)
+  check sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result.ptr, nil)
 
 converter toPtr*(stmt: StatementObj): lent Statement {.inline.} = stmt.ptr
 converter toPtr*(stmt: var StatementObj): var Statement {.inline.} = stmt.ptr
@@ -86,13 +86,13 @@ proc step*(stmt: Statement): bool {.inline, discardable.} =
   case ret
   of SQLITE_ROW: return true
   of SQLITE_DONE: return false
-  else: raiseSqliteError ret
+  else: raise newException(ret)
 
 proc exec*(stmt: Statement) {.inline.} =
   ## Execute an SQL `stmt`. Raises an exception if the execution returned a row of data. TODO: Should this Rollback?
   let ret = sqlite3_step(stmt)
   if unlikely ret != SQLITE_DONE:
-    raiseSqliteError ret
+    raise newException(ret)
 
 
 template db*(stmt: Statement): Database =
@@ -102,7 +102,7 @@ template db*(stmt: Statement): Database =
 func checkForError(db: Database) {.inline.} =
   let err = sqlite3_errcode(db)
   if unlikely err notin {SQLITE_OK, SQLITE_ROW, SQLITE_DONE}:
-    raiseSqliteError err
+    raise newException(err)
 
 template checkForError(stmt: Statement) =
   checkForError(stmt.db)
@@ -151,10 +151,10 @@ macro bindParam*(stmt: Statement; name: cstring|string; val: typed; other: varar
 proc restart*(stmt: Statement) {.inline.} =
   ## Reset a statement to the beginning of its program, ready to be re-executed.
   ## Does not unbind bound parameters.
-  sqliteCheck sqlite3_reset(stmt)
+  check sqlite3_reset(stmt)
 
 proc clearParams*(stmt: Statement) {.inline.} =
-  sqliteCheck sqlite3_clear_bindings(stmt)
+  check sqlite3_clear_bindings(stmt)
 
 
 #                                       Statement utilities
@@ -287,7 +287,7 @@ template explainLevel*(stmt: Statement): range[0'i32..2'i32] =
 proc setExplain*(stmt: Statement; mode: bool|range[0'i32..2'i32]|static[range[0..2]] = true) {.inline.} =
   ## Change the EXPLAIN flag for `stmt` so that it acts as if it was/wasn't prefixed with "EXPLAIN" or "EXPLAIN QUERY PLAN".
   if stmt.busy: restart stmt
-  sqliteCheck sqlite3_stmt_explain(stmt, int32 mode)
+  check sqlite3_stmt_explain(stmt, int32 mode)
 
 proc getExplanation(stmt: Statement): seq[seq[string]] {.inline.} =
   let origExplain = stmt.explainLevel

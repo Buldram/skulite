@@ -3,7 +3,16 @@
 ## 2.0.0 - Unreleased
 
 * Remove reopen, close, reprepare, finalize
-* Rename (Database|Statement)Wrapper → *Obj, (Database|Statement).raw → *.ptr, internal sqlite3* types → Sqlite3*
+* Refactor raiseSqliteError → newException
+* Refactor explain handling
+  * Let setExplain accept static ints
+  * Type explain level as int32 instead of int8
+* Rename
+  * (Database|Statement)Wrapper → *Obj
+  * (Database|Statement).raw → *.ptr
+  * internal sqlite3* types → Sqlite3*
+  * isExplain → explainLevel
+  * sqliteCheck → check
 
 ## 1.3.0 - April 28 2024
 
