@@ -100,9 +100,9 @@ template db*(stmt: Statement): Database =
   sqlite3_db_handle(stmt)
 
 func checkForError(db: Database) {.inline.} =
-  let err = sqlite3_errcode(db)
-  if unlikely err notin {SQLITE_OK, SQLITE_ROW, SQLITE_DONE}:
-    raise newException(err)
+  let ret = sqlite3_errcode(db)
+  if unlikely ret notin {SQLITE_OK, SQLITE_ROW, SQLITE_DONE}:
+    raise newException(ret)
 
 template checkForError(stmt: Statement) =
   checkForError(stmt.db)
@@ -240,15 +240,16 @@ template step*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFla
   result
 
 
-proc unpack*[t](stmt: Statement; T: typedesc[t]): t {.inline.} =
+template unpack*[t](stmt: Statement; T: typedesc[t]): t =
   when T isnot tuple:
     getColumn(stmt, 0, T)
   elif T isnot tuple[]:
+    var result: T
     var i = 0'i32
     for field in result.fields:
       field = getColumn(stmt, i, typeof field)
       inc i
-
+    result
 
 template query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto = (); flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
@@ -292,7 +293,7 @@ proc setExplain*(stmt: Statement; mode: bool|range[0'i32..2'i32]|static[range[0.
 proc getExplanation(stmt: Statement): seq[seq[string]] {.inline.} =
   let origExplain = stmt.explainLevel
   if origExplain != 1:
-    setExplain(stmt, 1)
+    setExplain(stmt)
   let numColumns = stmt.numColumns
   result = @[newSeq[string](numColumns)]
   for i in 0 ..< numColumns:

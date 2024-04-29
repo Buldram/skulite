@@ -32,3 +32,5 @@ when NimMajor > 1:
       doAssert "blessing" == db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["license"]
       doAssert "blessing" == db.query("SELECT json_extract(metadata, '$.license') FROM projects LIMIT 1", string)
     sunny()
+else:
+  echo "Warning: sunny is not available and so wasn't tested."

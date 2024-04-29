@@ -1,3 +1,5 @@
+## Shim for Nim <= 2.0
+
 {.used.}
 
 when not declared(newSeqUninit):
