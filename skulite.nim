@@ -27,17 +27,13 @@ type
   DatabaseObj* = object
     `ptr`*: Database
 
-proc close*(db: var Database) {.inline.} =
-  sqliteCheck sqlite3_close_v2(db)
-  db = nil
-
 proc `=copy`*(dest: var DatabaseObj; src: DatabaseObj) {.error.}
 proc `=dup`*(x: DatabaseObj): DatabaseObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: DatabaseObj) =
+  proc `=destroy`*(x: DatabaseObj) {.inline.} =
     discard sqlite3_close_v2(x.ptr)
 else:
-  proc `=destroy`*(x: var DatabaseObj) =
+  proc `=destroy`*(x: var DatabaseObj) {.inline.} =
     discard sqlite3_close_v2(x.ptr)
 
 proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
@@ -49,13 +45,6 @@ template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode};
 converter toPtr*(db: DatabaseObj): lent Database {.inline.} = db.ptr
 converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.ptr
 
-proc reopen*(db: var Database; filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) {.inline.} =
-  sqliteCheck sqlite3_close_v2(db)
-  sqliteCheck sqlite3_open_v2(filename, db, flags, vfs)
-
-template reopen*(db: var Database; filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) =
-  reopen(db, cstring filename, flags, vfs)
-
 proc flush*(db: Database) {.inline.} =
   sqliteCheck sqlite3_db_cacheflush(db)
 
@@ -64,10 +53,6 @@ type
   Statement* = ptr Sqlite3_stmt
   StatementObj* = object
     `ptr`*: Statement
-
-proc finalize*(stmt: var Statement) {.inline.} =
-  sqliteCheck sqlite3_finalize(stmt)
-  stmt = nil
 
 proc `=copy`*(dest: var StatementObj; src: StatementObj) {.error.}
 proc `=dup`*(x: StatementObj): StatementObj {.error.}
@@ -86,14 +71,6 @@ proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] 
 
 converter toPtr*(stmt: StatementObj): lent Statement {.inline.} = stmt.ptr
 converter toPtr*(stmt: var StatementObj): var Statement {.inline.} = stmt.ptr
-
-proc reprepare*(stmt: var Statement; db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}) {.inline.} =
-  sqliteCheck sqlite3_finalize(stmt)
-  sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, stmt, nil)
-
-proc reprepare*(stmt: var Statement; db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}) {.inline.} =
-  sqliteCheck sqlite3_finalize(stmt)
-  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, stmt, nil)
 
 template sql*(stmt: Statement): cstring =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.

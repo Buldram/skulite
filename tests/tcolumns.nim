@@ -35,7 +35,7 @@ proc strings {.inline.} =
     doAssert stmt[0, openArray[char], optForLong = true] == "Hello"
 
   template testInsert(hello: typed) =
-    db.reopen(cstring ":memory:")
+    db = openDatabase(cstring ":memory:")
     db.exec "CREATE TABLE example(words TEXT) STRICT"
     db.exec "INSERT INTO example (words) VALUES (?)", hello
     checkGetColumnMatches()
@@ -53,12 +53,12 @@ proc strings {.inline.} =
   testInsert("Hello".toOpenArray(0, 4))
   testInsert(['H', 'e', 'l', 'l', 'o'].toOpenArray(0, 4))
 
-  db.reopen(":memory:")
+  db = openDatabase(":memory:")
   db.exec "CREATE TABLE example(words TEXT) STRICT"
   db.exec "INSERT INTO example (words) VALUES (?)", "Tschüss, 🌍!"
   doAssert db.query("SELECT words FROM example LIMIT 1", string) == "Tschüss, 🌍!"
 
-  db.reopen(":memory:")
+  db = openDatabase(":memory:")
   db.exec "CREATE TABLE example(words TEXT) STRICT"
   db.exec "INSERT INTO example (words) VALUES (?)", ""
   doAssert db.query("SELECT words FROM example LIMIT 1", string) == ""
@@ -75,7 +75,7 @@ proc blobs {.inline.} =
       doAssert stmt[0, openArray[byte]] == [byte 1, 2, 3, 4, 5]
 
     template testInsert(countup: typed) =
-      db.reopen(":memory:")
+      db = openDatabase(":memory:")
       db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
       db.exec "INSERT INTO test (blobs) VALUES (?)", countup
       checkGetColumnMatches()
@@ -90,7 +90,7 @@ proc blobs {.inline.} =
 
   block zero:
     template testInsert(empty: typed) =
-      db.reopen(":memory:")
+      db = openDatabase(":memory:")
       db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
       db.exec "INSERT INTO test (blobs) VALUES (?)", empty
       let stmt = db.step("SELECT blobs FROM test LIMIT 1")

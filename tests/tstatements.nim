@@ -28,7 +28,7 @@ proc tstatements {.inline.} =
   doAssert s2.numValues == 1
   explain(s2)
 
-  db.reopen(":memory:")
+  db = openDatabase(":memory:")
   db.exec "CREATE TABLE IF NOT EXISTS example(a TEXT, b TEXT) STRICT"
   db.exec "INSERT INTO example(a,b) VALUES (?,?)", ("Hello,", "World!")
   let s3 = db.prepStatement("SELECT a,b FROM example")
