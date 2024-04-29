@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.3.x - Unreleased
+## 2.0.0 - Unreleased
+
+* Rename (Database|Statement)Wrapper → *Obj, (Database|Statement).raw → *.ptr, internal sqlite3* types → Sqlite3*
 
 ## 1.3.0 - April 28 2024
 

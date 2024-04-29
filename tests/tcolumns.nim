@@ -19,7 +19,7 @@ proc floats {.inline.} =
 floats()
 
 proc strings {.inline.} =
-  var db {.used.}: DatabaseWrapper
+  var db {.used.}: DatabaseObj
 
   template checkGetColumnMatches() =
     doAssert db.lastStatement().expandedSql == "INSERT INTO example (words) VALUES ('Hello')"
@@ -65,7 +65,7 @@ proc strings {.inline.} =
 strings()
 
 proc blobs {.inline.} =
-  var db: DatabaseWrapper
+  var db: DatabaseObj
 
   block counting:
     template checkGetColumnMatches() =
@@ -123,11 +123,11 @@ proc objects {.inline.} =
   proc bindParam(stmt: Statement; index: Positive32; val: Test2) {.inline, used.} =
     doAssert false, "Will never be reached as Test->Test2 is a conversion match, concepts are considered generic matches and have a higher precedence."
 
-  proc reset(db: var DatabaseWrapper) =
+  proc reset(db: var DatabaseObj) =
     db = openDatabase(":memory:")
     db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
 
-  var db: DatabaseWrapper
+  var db: DatabaseObj
 
   reset db
   db.exec "INSERT INTO test (blobs) VALUES (?)", Test(a: 10, b: 'b')

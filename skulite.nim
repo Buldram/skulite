@@ -20,34 +20,34 @@ func sqliteCheck*(ret: ResultCode) {.inline, raises: [SqliteError].} =
   if unlikely ret != SQLITE_OK: raiseSqliteError(ret)
 
 
-# We have "wrapped" objects for destructors but this module's procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
+# We have "wrapper" objects for destructors but this module's procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
 
 type
-  Database* = ptr sqlite3
-  DatabaseWrapper* = object
-    raw*: Database
+  Database* = ptr Sqlite3
+  DatabaseObj* = object
+    `ptr`*: Database
 
 proc close*(db: var Database) {.inline.} =
   sqliteCheck sqlite3_close_v2(db)
   db = nil
 
-proc `=copy`*(dest: var DatabaseWrapper; src: DatabaseWrapper) {.error.}
-proc `=dup`*(x: DatabaseWrapper): DatabaseWrapper {.error.}
+proc `=copy`*(dest: var DatabaseObj; src: DatabaseObj) {.error.}
+proc `=dup`*(x: DatabaseObj): DatabaseObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: DatabaseWrapper) =
-    discard sqlite3_close_v2(x.raw)
+  proc `=destroy`*(x: DatabaseObj) =
+    discard sqlite3_close_v2(x.ptr)
 else:
-  proc `=destroy`*(x: var DatabaseWrapper) =
-    discard sqlite3_close_v2(x.raw)
+  proc `=destroy`*(x: var DatabaseObj) =
+    discard sqlite3_close_v2(x.ptr)
 
-proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper {.inline.} =
-  sqliteCheck sqlite3_open_v2(filename, result.raw, flags, vfs)
+proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
+  sqliteCheck sqlite3_open_v2(filename, result.ptr, flags, vfs)
 
-template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseWrapper =
+template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj =
   openDatabase(cstring filename, flags, vfs)
 
-converter toRaw*(db: DatabaseWrapper): lent Database {.inline.} = db.raw
-converter toRaw*(db: var DatabaseWrapper): var Database {.inline.} = db.raw
+converter toPtr*(db: DatabaseObj): lent Database {.inline.} = db.ptr
+converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.ptr
 
 proc reopen*(db: var Database; filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil) {.inline.} =
   sqliteCheck sqlite3_close_v2(db)
@@ -61,31 +61,31 @@ proc flush*(db: Database) {.inline.} =
 
 
 type
-  Statement* = ptr sqlite3_stmt
-  StatementWrapper* = object
-    raw*: Statement
+  Statement* = ptr Sqlite3_stmt
+  StatementObj* = object
+    `ptr`*: Statement
 
 proc finalize*(stmt: var Statement) {.inline.} =
   sqliteCheck sqlite3_finalize(stmt)
   stmt = nil
 
-proc `=copy`*(dest: var StatementWrapper; src: StatementWrapper) {.error.}
-proc `=dup`*(x: StatementWrapper): StatementWrapper {.error.}
+proc `=copy`*(dest: var StatementObj; src: StatementObj) {.error.}
+proc `=dup`*(x: StatementObj): StatementObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: StatementWrapper) =
-    discard sqlite3_finalize(x.raw)
+  proc `=destroy`*(x: StatementObj) =
+    discard sqlite3_finalize(x.ptr)
 else:
-  proc `=destroy`*(x: var StatementWrapper) =
-    discard sqlite3_finalize(x.raw)
+  proc `=destroy`*(x: var StatementObj) =
+    discard sqlite3_finalize(x.ptr)
 
-proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
-  sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.raw, nil)
+proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
+  sqliteCheck sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.ptr, nil)
 
-proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementWrapper {.inline.} =
-  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result.raw, nil)
+proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
+  sqliteCheck sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result.ptr, nil)
 
-converter toRaw*(stmt: StatementWrapper): lent Statement {.inline.} = stmt.raw
-converter toRaw*(stmt: var StatementWrapper): var Statement {.inline.} = stmt.raw
+converter toPtr*(stmt: StatementObj): lent Statement {.inline.} = stmt.ptr
+converter toPtr*(stmt: var StatementObj): var Statement {.inline.} = stmt.ptr
 
 proc reprepare*(stmt: var Statement; db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}) {.inline.} =
   sqliteCheck sqlite3_finalize(stmt)
@@ -99,7 +99,7 @@ template sql*(stmt: Statement): cstring =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.
   sqlite3_sql(stmt)
 
-template `$`*(stmt: Statement|StatementWrapper): string =
+template `$`*(stmt: Statement|StatementObj): string =
   $stmt.sql
 
 
@@ -198,7 +198,7 @@ template numValues*(stmt: Statement): int32 =
   sqlite3_data_count(stmt)
 
 type
-  SqliteAlloc[T: pointer|ptr|cstring] = object ## Wrapper with a `=destroy` hook which calls `sqlite3_free`
+  SqliteAlloc[T: pointer|ptr|cstring] = object ## Obj with a `=destroy` hook which calls `sqlite3_free`
     val*: T
 when defined(nimAllowNonVarDestructor):
   proc `=destroy`*[T](x: SqliteAlloc[T]) =
@@ -248,7 +248,7 @@ macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
           bindParam(`stmt`, i, param)
           inc i
 
-template prepStatement*(db: Database; sql: auto; params: auto; flags: set[PrepareFlag] = {}): StatementWrapper =
+template prepStatement*(db: Database; sql: auto; params: auto; flags: set[PrepareFlag] = {}): StatementObj =
   # Template so that we can pass a tuple literal to `bindParams`
   let result = prepStatement(db, sql, flags)
   result.bindParams(params)
@@ -257,7 +257,7 @@ template prepStatement*(db: Database; sql: auto; params: auto; flags: set[Prepar
 template exec*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFlag] = {}) =
   exec prepStatement(db, sql, params, flags)
 
-template step*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFlag] = {}): StatementWrapper =
+template step*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFlag] = {}): StatementObj =
   let result = prepStatement(db, sql, params, flags)
   step result
   result
