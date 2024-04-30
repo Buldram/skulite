@@ -5,7 +5,8 @@ import skulite/[sqlite3c, shim]
 export OpenFlag, SuperJournal, PrepareFlag, Datatype
 
 when not defined(gcDestructors):
-  {.error: "requires --mm:arc/orc".}
+  when (NimMajor, NimMinor, NimPatch) >= (1, 6, 2): {.error: "requires --mm:arc/orc".}
+  else: {.error: "requires --gc:arc/orc".}
 
 const checkSqliteUsage* {.booldefine.} = not defined(release)
 ## Whether to often do costly checking for correct usage of the SQLite API.
