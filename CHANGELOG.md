@@ -2,6 +2,7 @@
 
 ## 2.0.0 - Unreleased
 
+* Dynamically link sqlite3 using linker, not dynlib
 * Remove reopen, close, reprepare, finalize
 * Refactor raiseSqliteError → newException
 * Refactor explain handling

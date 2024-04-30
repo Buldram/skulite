@@ -1,5 +1,3 @@
-## SQlite wrapper module.
-
 import std/[macros, options, typetraits]
 import skulite/[sqlite3c, shim]
 export OpenFlag, SuperJournal, PrepareFlag, Datatype
@@ -11,8 +9,7 @@ when not defined(gcDestructors):
 const checkSqliteUsage* {.booldefine.} = not defined(release)
 ## Whether to often do costly checking for correct usage of the SQLite API.
 
-type
-  SqliteError* = object of CatchableError
+type SqliteError* = object of CatchableError
 
 template newException*(err: ResultCode): ref SqliteError =
   newException(SqliteError, $sqlite3_errstr(err))

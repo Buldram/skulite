@@ -1,6 +1,6 @@
 import ../skulite
 
-proc readonly(stmt: Statement): bool {.importc: "sqlite3_stmt_readonly".}
+proc readonly(stmt: Statement): bool {.importc: "sqlite3_stmt_readonly", noconv.}
 let db = openDatabase(":memory:")
 let s1 = db.prepStatement "CREATE TABLE IF NOT EXISTS test(words)"
 doAssert not readonly(s1)
