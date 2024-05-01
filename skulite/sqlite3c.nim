@@ -31,7 +31,7 @@ else:
 type
   Sqlite3* {.incompleteStruct.} = object # Database connection handle
   Sqlite3_stmt* {.incompleteStruct.} = object
-  Sqlite3_destructor* = proc (x: pointer) {.cdecl, gcsafe, raises: [].}
+  Sqlite3_destructor* = proc (x: pointer) {.noconv, gcsafe, raises: [].}
 
   ResultCode* {.size: sizeof(int32).} = enum
     SQLITE_OK,         ## Successful result
