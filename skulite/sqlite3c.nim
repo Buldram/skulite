@@ -184,7 +184,7 @@ const
   SuperJournal* = MasterJournal
 
 const
-  SQLITE_STATIC* = cast[Sqlite3_destructor](-1)
+  SQLITE_STATIC* = cast[Sqlite3_destructor](0)
   SQLITE_TRANSIENT* = cast[Sqlite3_destructor](-1)
 
 func sqlite3_errstr*(code: ResultCode): cstring {.importc, noconv.}

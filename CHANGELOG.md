@@ -2,6 +2,7 @@
 
 ## 2.0.0 - Unreleased
 
+* Fix `SQLITE_STATIC` value
 * Change calling convention for sqlite3 bindings from `cdecl` to `noconv`
 * Dynamically link sqlite3 using linker, not dynlib
 * Remove reopen, close, reprepare, finalize
