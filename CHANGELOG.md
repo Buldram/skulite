@@ -4,6 +4,7 @@
 
 * Remove {.discardable.} from `step`
 * Raise an exception if `query` returns no rows
+* Re-order `params` and `T` in `query`
 * Correct `SQLITE_STATIC` value
 * Change calling convention for sqlite3 bindings from `cdecl` to `noconv`
 * Dynamically link sqlite3 using linker, not dynlib

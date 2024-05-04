@@ -82,8 +82,8 @@ proc step*(stmt: Statement): bool {.inline.} =
   ## Evaluate or "step" an SQL `stmt`. Returns `true` if the evaluation returned a row of data.
   let ret = sqlite3_step(stmt)
   case ret
-  of SQLITE_ROW: return true
-  of SQLITE_DONE: return false
+  of SQLITE_ROW: true
+  of SQLITE_DONE: false
   else: raise newException(ret)
 
 proc exec*(stmt: Statement) {.inline.} =
@@ -206,7 +206,7 @@ template lastStatement*(db: Database; stmt: Statement = nil): Statement =
   sqlite3_next_stmt(db, stmt)
 
 
-#                                  Readable high-level interface
+#                                   Readable high-level interface
 
 macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
   if params.kind == nnkTupleConstr: # Tuple literal, ideal as we can bind static values even if not all values in the tuple are static
@@ -244,17 +244,20 @@ template unpack*[t](stmt: Statement; T: typedesc[t]): t =
       inc i
     result
 
-template query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto = (); flags: set[PrepareFlag] = {}): t =
+template query*[t](db: Database; sql: auto; params: auto = (); T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
   if likely step stmt:
     unpack(stmt, T)
   else:
     raise newException(SQLiteError, "Statement returned no rows")
 
-iterator query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto|static[auto] = (); flags: set[PrepareFlag] = {}): t =
+iterator query*[t](db: Database; sql: auto; params: auto|static[auto] = (); T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
   while step stmt:
     yield unpack(stmt, T)
+
+template query*[t](db: Database; sql: auto; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
+  query(db, sql, (), T, flags)
 
 
 template transaction*(db: Database; mode: string; body: typed) =
