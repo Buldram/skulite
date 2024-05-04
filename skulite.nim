@@ -251,12 +251,14 @@ template unpack*[t](stmt: Statement; T: typedesc[t]): t =
 
 template query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto = (); flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
-  step stmt
-  unpack(stmt, T)
+  if likely step(stmt):
+    unpack(stmt, T)
+  else:
+    raise newException(SQLiteError, "Statement returned no rows")
 
 iterator query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto|static[auto] = (); flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
-  while step stmt:
+  while step(stmt):
     yield unpack(stmt, T)
 
 
