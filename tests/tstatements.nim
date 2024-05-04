@@ -24,7 +24,7 @@ proc tstatements {.inline.} =
   doAssert s2.numColumns == 1
   doAssert s2.numValues == 0
   doAssert s2.readonly
-  step s2
+  doAssert step s2
   doAssert s2.numValues == 1
   explain(s2)
 
@@ -33,7 +33,7 @@ proc tstatements {.inline.} =
   db.exec "INSERT INTO example(a,b) VALUES (?,?)", ("Hello,", "World!")
   let s3 = db.prepStatement("SELECT a,b FROM example")
   explain(s3)
-  step s3
+  doAssert step s3
   doAssert unpack(s3, (string, string)) == ("Hello,", "World!")
   doAssert db.query("SELECT a,b FROM example", (string, string)) == ("Hello,", "World!")
 tstatements()

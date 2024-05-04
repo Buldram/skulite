@@ -78,7 +78,7 @@ template `$`*(stmt: Statement|StatementObj): string =
   $stmt.sql
 
 
-proc step*(stmt: Statement): bool {.inline, discardable.} =
+proc step*(stmt: Statement): bool {.inline.} =
   ## Evaluate or "step" an SQL `stmt`. Returns `true` if the evaluation returned a row of data.
   let ret = sqlite3_step(stmt)
   case ret

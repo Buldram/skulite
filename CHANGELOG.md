@@ -2,6 +2,7 @@
 
 ## 2.0.0 - Unreleased
 
+* Remove {.discardable.} from `step`
 * Raise an exception if `query` returns no rows
 * Correct `SQLITE_STATIC` value
 * Change calling convention for sqlite3 bindings from `cdecl` to `noconv`
