@@ -225,17 +225,12 @@ macro bindParams*(stmt: Statement; params: typed; start: Positive32 = 1) =
 
 template prepStatement*(db: Database; sql: auto; params: auto; flags: set[PrepareFlag] = {}): StatementObj =
   # Template so that we can pass a tuple literal to `bindParams`
-  let result = prepStatement(db, sql, flags)
+  let result = db.prepStatement(sql, flags)
   result.bindParams(params)
   result
 
 template exec*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFlag] = {}) =
-  exec prepStatement(db, sql, params, flags)
-
-template step*(db: Database; sql: auto; params: auto = (); flags: set[PrepareFlag] = {}): StatementObj =
-  let result = prepStatement(db, sql, params, flags)
-  step result
-  result
+  exec db.prepStatement(sql, params, flags)
 
 
 template unpack*[t](stmt: Statement; T: typedesc[t]): t =
@@ -251,14 +246,14 @@ template unpack*[t](stmt: Statement; T: typedesc[t]): t =
 
 template query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto = (); flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
-  if likely step(stmt):
+  if likely step stmt:
     unpack(stmt, T)
   else:
     raise newException(SQLiteError, "Statement returned no rows")
 
 iterator query*[t](db: Database; sql: auto; T: typedesc[t]; params: auto|static[auto] = (); flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
-  while step(stmt):
+  while step stmt:
     yield unpack(stmt, T)
 
 

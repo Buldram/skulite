@@ -23,7 +23,8 @@ proc strings {.inline.} =
 
   template checkGetColumnMatches() =
     doAssert db.lastStatement().expandedSql == "INSERT INTO example (words) VALUES ('Hello')"
-    let stmt = db.step("SELECT words FROM example LIMIT 1")
+    let stmt = db.prepStatement("SELECT words FROM example LIMIT 1")
+    doAssert step stmt
     doAssert stmt.expandedSql == "SELECT words FROM example LIMIT 1"
     doAssert stmt[0, cstring] == cstring "Hello"
     doAssert stmt[0, string] == "Hello"
@@ -69,7 +70,8 @@ proc blobs {.inline.} =
 
   block counting:
     template checkGetColumnMatches() =
-      let stmt = db.step("SELECT blobs FROM test LIMIT 1")
+      let stmt = db.prepStatement("SELECT blobs FROM test LIMIT 1")
+      doAssert step stmt
       doAssert stmt[0, seq[byte]] == @[byte 1, 2, 3, 4, 5]
       doAssert stmt[0, array[5, byte]] == [byte 1, 2, 3, 4, 5]
       doAssert stmt[0, openArray[byte]] == [byte 1, 2, 3, 4, 5]
@@ -93,7 +95,8 @@ proc blobs {.inline.} =
       db = openDatabase(":memory:")
       db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
       db.exec "INSERT INTO test (blobs) VALUES (?)", empty
-      let stmt = db.step("SELECT blobs FROM test LIMIT 1")
+      let stmt = db.prepstatement("SELECT blobs FROM test LIMIT 1")
+      doAssert step stmt
       when empty is array[0, byte]: doAssert stmt[0, seq[byte]].len == 0
       else: doAssert stmt.columnIsNil(0)
 

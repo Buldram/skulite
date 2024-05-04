@@ -7,6 +7,7 @@
 * Change calling convention for sqlite3 bindings from `cdecl` to `noconv`
 * Dynamically link sqlite3 using linker, not dynlib
 * Remove reopen, close, reprepare, finalize
+* Remove step(Database)
 * Refactor raiseSqliteError → newException
 * Refactor explain handling
   * Let setExplain accept static ints
