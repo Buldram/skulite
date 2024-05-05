@@ -28,13 +28,13 @@ type
 proc `=copy`*(dest: var DatabaseObj; src: DatabaseObj) {.error.}
 proc `=dup`*(x: DatabaseObj): DatabaseObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: DatabaseObj) {.inline.} =
+  proc `=destroy`*(x: DatabaseObj) =
     discard sqlite3_close_v2(x.ptr)
 else:
-  proc `=destroy`*(x: var DatabaseObj) {.inline.} =
+  proc `=destroy`*(x: var DatabaseObj) =
     discard sqlite3_close_v2(x.ptr)
 
-proc openDatabase*(filename: cstring; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
+proc openDatabase*(filename: cstring|static[string]; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
   check sqlite3_open_v2(filename, result.ptr, flags, vfs)
 
 template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj =
@@ -61,7 +61,7 @@ else:
   proc `=destroy`*(x: var StatementObj) =
     discard sqlite3_finalize(x.ptr)
 
-proc prepStatement*(db: Database; sql: cstring and (not string); flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
+proc prepStatement*(db: Database; sql: cstring|static[string]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
   check sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.ptr, nil)
 
 proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
@@ -244,20 +244,25 @@ template unpack*[t](stmt: Statement; T: typedesc[t]): t =
       inc i
     result
 
-template query*[t](db: Database; sql: auto; params: auto = (); T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
+template query*[t](db: Database; sql: auto; params: auto; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
   if likely step stmt:
     unpack(stmt, T)
   else:
     raise newException(SQLiteError, "Statement returned no rows")
 
-iterator query*[t](db: Database; sql: auto; params: auto|static[auto] = (); T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
+template query*[t](db: Database; sql: auto; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
+  query(db, sql, (), T, flags)
+
+iterator query*[t](db: Database; sql: auto; params: auto|static[auto]; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
   let stmt = db.prepStatement(sql, params, flags)
   while step stmt:
     yield unpack(stmt, T)
 
-template query*[t](db: Database; sql: auto; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
-  query(db, sql, (), T, flags)
+iterator query*[t](db: Database; sql: auto; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
+  let stmt = db.prepStatement(sql, flags)
+  while step stmt:
+    yield unpack(stmt, T)
 
 
 template transaction*(db: Database; mode: string; body: typed) =

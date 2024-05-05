@@ -5,7 +5,7 @@ proc ordinals {.inline.} =
   let db = openDatabase(":memory:")
   db.exec "CREATE TABLE IF NOT EXISTS test(ints INT) STRICT"
   db.exec "INSERT INTO test (ints) VALUES (?)", -1
-  doAssert db.query("SELECT ints FROM test LIMIT 1", int64) == -1
+  doAssert db.query("SELECT ints FROM test LIMIT ?", 1, int64) == -1
   when compileOption("rangechecks"):
     doAssertRaises(ValueError):
       discard db.query("SELECT ints FROM test LIMIT 1", uint32)
