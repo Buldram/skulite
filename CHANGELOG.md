@@ -16,7 +16,6 @@
   * Type explain level as int32 instead of int8
 * Rename
   * (Database|Statement)Wrapper → *Obj
-  * (Database|Statement).raw → *.ptr
   * internal sqlite3* types → Sqlite3*
   * isExplain → explainLevel
   * sqliteCheck → check

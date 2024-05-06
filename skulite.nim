@@ -23,25 +23,23 @@ func check*(ret: ResultCode) {.inline, raises: [SqliteError].} =
 type
   Database* = ptr Sqlite3
   DatabaseObj* = object
-    `ptr`*: Database
+    raw*: ptr Sqlite3
+
+converter toPtr*(db: DatabaseObj): lent Database {.inline.} = db.raw
+converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.raw
 
 proc `=copy`*(dest: var DatabaseObj; src: DatabaseObj) {.error.}
 proc `=dup`*(x: DatabaseObj): DatabaseObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: DatabaseObj) =
-    discard sqlite3_close_v2(x.ptr)
+  proc `=destroy`*(x: DatabaseObj) = discard sqlite3_close_v2(x)
 else:
-  proc `=destroy`*(x: var DatabaseObj) =
-    discard sqlite3_close_v2(x.ptr)
+  proc `=destroy`*(x: var DatabaseObj) = discard sqlite3_close_v2(x)
 
 proc openDatabase*(filename: cstring|static[string]; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
-  check sqlite3_open_v2(filename, result.ptr, flags, vfs)
+  check sqlite3_open_v2(filename, result, flags, vfs)
 
 template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj =
   openDatabase(cstring filename, flags, vfs)
-
-converter toPtr*(db: DatabaseObj): lent Database {.inline.} = db.ptr
-converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.ptr
 
 proc flush*(db: Database) {.inline.} =
   check sqlite3_db_cacheflush(db)
@@ -50,25 +48,24 @@ proc flush*(db: Database) {.inline.} =
 type
   Statement* = ptr Sqlite3_stmt
   StatementObj* = object
-    `ptr`*: Statement
+    raw*: Statement
+
+converter toPtr*(stmt: StatementObj): lent Statement {.inline.} = stmt.raw
+converter toPtr*(stmt: var StatementObj): var Statement {.inline.} = stmt.raw
 
 proc `=copy`*(dest: var StatementObj; src: StatementObj) {.error.}
 proc `=dup`*(x: StatementObj): StatementObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: StatementObj) =
-    discard sqlite3_finalize(x.ptr)
+  proc `=destroy`*(x: StatementObj) = discard sqlite3_finalize(x)
 else:
-  proc `=destroy`*(x: var StatementObj) =
-    discard sqlite3_finalize(x.ptr)
+  proc `=destroy`*(x: var StatementObj) = discard sqlite3_finalize(x)
 
 proc prepStatement*(db: Database; sql: cstring|static[string]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
-  check sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result.ptr, nil)
+  check sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result, nil)
 
 proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
-  check sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result.ptr, nil)
+  check sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result, nil)
 
-converter toPtr*(stmt: StatementObj): lent Statement {.inline.} = stmt.ptr
-converter toPtr*(stmt: var StatementObj): var Statement {.inline.} = stmt.ptr
 
 template sql*(stmt: Statement): cstring =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.
