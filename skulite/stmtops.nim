@@ -48,10 +48,10 @@ template getColumn*(stmt: Statement; index: Natural32; T: typedesc[float32]): T 
 #                                              string
 
 proc bindParam*(stmt: Statement; index: Positive32; val: cstring and (not string)) {.inline.} =
-  check sqlite3_bind_text(stmt, index, val, int32 val.len, SQLITE_TRANSIENT)
+  check sqlite3_bind_text(stmt, index, val, int32 val.len, TransientDestructor)
 
 proc bindParam*(stmt: Statement; index: Positive32; val: openArray[char]) {.inline.} =
-  check sqlite3_bind_text(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+  check sqlite3_bind_text(stmt, index, cast[cstring](unsafeAddr val), int32 val.len, TransientDestructor)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[cstring]): cstring {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -97,13 +97,13 @@ proc getColumn*[N](stmt: Statement; index: Natural32; T: typedesc[array[N, char]
 
 when (NimMajor, NimMinor, NimPatch) > (1, 6, 8):
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
+    check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, TransientDestructor)
 else:
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    check sqlite3_bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, SQLITE_TRANSIENT)
+    check sqlite3_bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, TransientDestructor)
 
   proc bindParam*[N](stmt: Statement; index: Positive32; val: array[N, byte]) {.inline.} =
-    check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, SQLITE_TRANSIENT)
+    check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 val.len, TransientDestructor)
 
 proc getColumn*(stmt: Statement; index: Natural32; T: typedesc[ptr UncheckedArray[byte]]): T {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
@@ -164,7 +164,7 @@ type
     T isnot openArray|array # To avoid overloading conversions to openArray
  
 proc bindParam*[T: CopyMemable](stmt: Statement; index: Positive32; val: T) {.inline.} =
-  check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 sizeof(T), SQLITE_TRANSIENT)
+  check sqlite3_bind_blob(stmt, index, unsafeAddr val, int32 sizeof(T), TransientDestructor)
 
 proc getColumn*[t: CopyMemable](stmt: Statement; index: Natural32; T: typedesc[t]): t {.inline.} =
   let p = getColumn(stmt, index, ptr UncheckedArray[byte])

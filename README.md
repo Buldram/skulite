@@ -44,7 +44,7 @@ echo "lang: ", db.query("SELECT json_extract(metadata, '$.language') FROM projec
 ## Notes
 
 * `-d:staticSqlite`: Build and link SQlite statically, enabled by default on Windows.
-  * There are more options related to compiling SQLite in the header of [sqlite3c.nim](skulite/sqlite3c.nim).
+  * There are more options related to compiling SQLite in the header of [sqlite3.nim](skulite/sqlite3.nim).
 * `-d:checkSqliteUsage`: Check if you're misusing the SQLite API, enabled by default for debug builds.
 
 ## See also

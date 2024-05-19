@@ -2,6 +2,7 @@
 
 ## 2.0.0 - Unreleased
 
+* Add bindings for sqlite3_config
 * Remove {.discardable.} from `step`
 * Raise an exception if `query` returns no rows
 * Swap order of `params` and `T` in `query`
@@ -15,6 +16,9 @@
   * Let setExplain accept static ints
   * Type explain level as int32 instead of int8
 * Rename
+  * sqlite3c.nim → sqlite3.nim
+  * Result code SQLITE_OK → ResultCode.Ok
+  * SQLITE_TRANSIENT → TransientDestructor
   * (Database|Statement)Wrapper → *Obj
   * internal sqlite3* types → Sqlite3*
   * isExplain → explainLevel

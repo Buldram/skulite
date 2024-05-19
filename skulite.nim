@@ -1,6 +1,6 @@
 import std/[macros, options, typetraits]
-import skulite/[sqlite3c, shim]
-export OpenFlag, SuperJournal, PrepareFlag, Datatype
+import skulite/[sqlite3, shim]
+export OpenFlag, SuperJournal, PrepareFlag, Datatype, ConfigOp
 
 when not defined(gcDestructors):
   when (NimMajor, NimMinor, NimPatch) >= (1, 6, 2): {.error: "requires --mm:arc/orc".}
@@ -15,7 +15,7 @@ template newException*(err: ResultCode): ref SqliteError =
   newException(SqliteError, $sqlite3_errstr(err))
 
 func check*(ret: ResultCode) {.inline, raises: [SqliteError].} =
-  if unlikely ret != SQLITE_OK: raise newException(ret)
+  if unlikely ret != Ok: raise newException(ret)
 
 
 # We have "wrapper" objects for destructors but this module's procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
@@ -43,6 +43,10 @@ template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode};
 
 proc flush*(db: Database) {.inline.} =
   check sqlite3_db_cacheflush(db)
+
+macro config*(op: ConfigOp; args: varargs[untyped]) =
+  result = quote do: check sqlite3_config(`op`)
+  for arg in args: result[^1].add arg
 
 
 type
@@ -79,14 +83,14 @@ proc step*(stmt: Statement): bool {.inline.} =
   ## Evaluate or "step" an SQL `stmt`. Returns `true` if the evaluation returned a row of data.
   let ret = sqlite3_step(stmt)
   case ret
-  of SQLITE_ROW: true
-  of SQLITE_DONE: false
+  of Row: true
+  of Done: false
   else: raise newException(ret)
 
 proc exec*(stmt: Statement) {.inline.} =
   ## Execute an SQL `stmt`. Raises an exception if the execution returned a row of data. TODO: Should this Rollback?
   let ret = sqlite3_step(stmt)
-  if unlikely ret != SQLITE_DONE:
+  if unlikely ret != Done:
     raise newException(ret)
 
 
@@ -96,7 +100,7 @@ template db*(stmt: Statement): Database =
 
 func checkForError(db: Database) {.inline.} =
   let ret = sqlite3_errcode(db)
-  if unlikely ret notin {SQLITE_OK, SQLITE_ROW, SQLITE_DONE}:
+  if unlikely ret notin {Ok, Row, Done}:
     raise newException(ret)
 
 template checkForError(stmt: Statement) =

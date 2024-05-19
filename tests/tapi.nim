@@ -1,5 +1,5 @@
 import ../skulite
-from ../skulite/sqlite3c import sqlite3_bind_text
+from ../skulite/sqlite3 import sqlite3_bind_text
 
 proc tapi {.inline.} =
   let db = openDatabase(":memory:")
