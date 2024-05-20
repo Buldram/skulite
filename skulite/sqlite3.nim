@@ -44,7 +44,7 @@ type
     Busy,       ## The database file is locked
     Locked,     ## A table in the database is locked
     Nomem,      ## A malloc() failed
-    Readonly,   ## Attempt to write a readonly database
+    ReadOnly,   ## Attempt to write a readonly database
     Interrupt,  ## Operation terminated by sqlite3_interrupt()*
     Ioerr,      ## Some kind of disk io error occurred
     Corrupt,    ## The database disk image is malformed
@@ -72,7 +72,7 @@ type
     ErrorMissingCollseq    = Error.int or 1 shl 8,
     BusyRecovery           = Busy.int or 1 shl 8,
     LockedSharedcache      = Locked.int or 1 shl 8,
-    ReadonlyRecovery       = Readonly.int or 1 shl 8,
+    ReadOnlyRecovery       = ReadOnly.int or 1 shl 8,
     IoerrRead              = Ioerr.int or 1 shl 8,
     CorruptVtab            = Corrupt.int or 1 shl 8,
     CantopenNotempdir      = Cantopen.int or 1 shl 8,
@@ -85,7 +85,7 @@ type
     AbortRollback          = Abort.int or 2 shl 8,
     BusySnapshot           = Busy.int or 2 shl 8,
     LockedVtab             = Locked.int or 2 shl 8,
-    ReadonlyCantlock       = Readonly.int or 2 shl 8,
+    ReadOnlyCantlock       = ReadOnly.int or 2 shl 8,
     IoerrShortRead         = Ioerr.int or 2 shl 8,
     CorruptSequence        = Corrupt.int or 2 shl 8,
     CantopenIsdir          = Cantopen.int or 2 shl 8,
@@ -93,21 +93,21 @@ type
     NoticeRecoverRollback  = Notice.int or 2 shl 8,
     ErrorSnapshot          = Error.int or 3 shl 8,
     BusyTimeout            = Busy.int or 3 shl 8,
-    ReadonlyRollback       = Readonly.int or 3 shl 8,
+    ReadOnlyRollback       = ReadOnly.int or 3 shl 8,
     IoerrWrite             = Ioerr.int or 3 shl 8,
     CorruptIndex           = Corrupt.int or 3 shl 8,
     CantopenFullpath       = Cantopen.int or 3 shl 8,
     ConstraintForeignkey   = Constraint.int or 3 shl 8,
     NoticeRbu              = Notice.int or 3 shl 8,
-    ReadonlyDbmoved        = Readonly.int or 4 shl 8,
+    ReadOnlyDbmoved        = ReadOnly.int or 4 shl 8,
     IoerrFsync             = Ioerr.int or 4 shl 8,
     CantopenConvpath       = Cantopen.int or 4 shl 8,
     ConstraintFunction     = Constraint.int or 4 shl 8,
-    ReadonlyCantinit       = Readonly.int or 5 shl 8,
+    ReadOnlyCantinit       = ReadOnly.int or 5 shl 8,
     IoerrDirFsync          = Ioerr.int or 5 shl 8,
     CantopenDirtywal       = Cantopen.int or 5 shl 8, ## Not Used
     ConstraintNotnull      = Constraint.int or 5 shl 8,
-    ReadonlyDirectory      = Readonly.int or 6 shl 8,
+    ReadOnlyDirectory      = ReadOnly.int or 6 shl 8,
     IoerrTruncate          = Ioerr.int or 6 shl 8,
     CantopenSymlink        = Cantopen.int or 6 shl 8,
     ConstraintPrimarykey   = Constraint.int or 6 shl 8,
@@ -153,7 +153,10 @@ const
 func errstr*(code: ResultCode): cstring {.noconv, importc: "sqlite3_errstr".}
 func errcode*(db: Database): ResultCode {.noconv, importc: "sqlite3_errcode".}
 
-type OpenFlag* {.size: sizeof(int32).} = enum
+
+when NimMajor < 2: {.pragma: dup, pure.}
+else: {.pragma: dup.}
+type OpenFlag* {.dup, size: sizeof(int32).} = enum
   ReadOnly,      ## Ok for sqlite3_open_v2()
   ReadWrite,     ## Ok for sqlite3_open_v2()
   Create,        ## Ok for sqlite3_open_v2()
@@ -260,7 +263,7 @@ type ConfigOp* = enum
   Pcache = 14 ## no-op
   Getpcache = 15 ## no-op
   Log = 16 ## xfunc, void*
-  Uri = 17 ## int
+  URI = 17 ## int
   Pcache2 = 18 ## sqlite3_pcache_methods2*
   Getpcache2 = 19 ## sqlite3_pcache_methods2*
   CoveringIndexScan = 20 ## int
