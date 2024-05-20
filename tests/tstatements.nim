@@ -13,10 +13,10 @@ proc tstatements {.inline.} =
   doAssert not s1.busy
   doAssert s1.explainLevel == 0
   explain(s1)
-  doAssert db.lastInsertRowID == 0
+  doAssert db.lastInsertRowid == 0
   exec s1
   doAssert db.lastStatement() == s1
-  doAssert db.lastInsertRowID == 2
+  doAssert db.lastInsertRowid == 2
 
   let s2 = db.prepStatement("SELECT words FROM example LIMIT 1")
   doAssert db.lastStatement(s2) == s1

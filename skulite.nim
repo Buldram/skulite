@@ -95,7 +95,7 @@ proc exec*(stmt: Statement) {.inline.} =
 
 template db*(stmt: Statement): Database =
   ## Returns the database connection to which `stmt` belongs.
-  sqlite3.dbHandle(stmt)
+  sqlite3.db_handle(stmt)
 
 func checkForError(db: Database) {.inline.} =
   let ret = sqlite3.errcode(db)
@@ -131,7 +131,7 @@ macro `[]`*[t](stmt: Statement; index: auto; T: typedesc[t]; other: varargs[unty
 
 template paramIndex*(stmt: Statement; name: cstring): Natural32 =
   ## Get the index of a named parameter or 0 if not found.
-  sqlite3.bindParameterIndex(stmt, name)
+  sqlite3.bind_parameter_index(stmt, name)
 
 template paramIndex*(stmt: Statement; name: string): Natural32 =
   ## Get the index of a named parameter or 0 if not found.
@@ -152,7 +152,7 @@ proc restart*(stmt: Statement) {.inline.} =
   check sqlite3.reset(stmt)
 
 proc clearParams*(stmt: Statement) {.inline.} =
-  check sqlite3.clearBindings(stmt)
+  check sqlite3.clear_bindings(stmt)
 
 
 #                                       Statement utilities
@@ -197,7 +197,7 @@ template readonly*(stmt: Statement): bool =
 template busy*(stmt: Statement): bool =
   sqlite3.stmt_busy(stmt)
 
-template lastInsertRowID*(db: Database): int64 =
+template lastInsertRowid*(db: Database): int64 =
   ## Returns the ROWID of the most recent insert, or 0 if there has never been a successful insert into a ROWID table on this connection.
   sqlite3.last_insert_rowid(db)
 
@@ -249,7 +249,7 @@ template query*[t](db: Database; sql: auto; params: auto; T: typedesc[t]; flags:
   if likely step stmt:
     unpack(stmt, T)
   else:
-    raise newException(SQLiteError, "Statement returned no rows")
+    raise newException(SqliteError, "Statement returned no rows")
 
 template query*[t](db: Database; sql: auto; T: typedesc[t]; flags: set[PrepareFlag] = {}): t =
   query(db, sql, (), T, flags)

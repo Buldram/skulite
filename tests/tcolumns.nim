@@ -96,7 +96,7 @@ proc blobs {.inline.} =
       db = openDatabase(":memory:")
       db.exec "CREATE TABLE IF NOT EXISTS test(blobs BLOB) STRICT"
       db.exec "INSERT INTO test (blobs) VALUES (?)", empty
-      let stmt = db.prepstatement("SELECT blobs FROM test LIMIT 1")
+      let stmt = db.prepStatement("SELECT blobs FROM test LIMIT 1")
       doAssert step stmt
       when empty is array[0, byte]: doAssert stmt[0, seq[byte]].len == 0
       else: doAssert stmt.columnIsNil(0)
