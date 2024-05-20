@@ -100,7 +100,7 @@ when (NimMajor, NimMinor, NimPatch) > (1, 6, 8):
     check sqlite3.bind_blob(stmt, index, unsafeAddr val, int32 val.len, sqlite3.TransientDestructor)
 else:
   proc bindParam*(stmt: Statement; index: Positive32; val: openArray[byte]) {.inline.} =
-    check sqlite3.bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, TransientDestructor)
+    check sqlite3.bind_blob(stmt, index, (if val.len == 0: nil else: unsafeAddr val), int32 val.len, sqlite3.TransientDestructor)
 
   proc bindParam*[N](stmt: Statement; index: Positive32; val: array[N, byte]) {.inline.} =
     check sqlite3.bind_blob(stmt, index, unsafeAddr val, int32 val.len, sqlite3.TransientDestructor)
