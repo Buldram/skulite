@@ -2,27 +2,26 @@
 
 ## 2.0.0 - Unreleased
 
-* Add bindings for sqlite3_config
-* Remove {.discardable.} from `step`
+* Added bindings for `sqlite3.config`
 * Raise an exception if `query` returns no rows
 * Swap order of `params` and `T` in `query`
 * Correct `SQLITE_STATIC` value
-* Change calling convention for sqlite3 bindings from `cdecl` to `noconv`
-* Dynamically link sqlite3 using linker, not dynlib
-* Remove reopen, close, reprepare, finalize
-* Remove step(Database)
-* Refactor raiseSqliteError → newException
-* Refactor explain handling
+* Changed calling convention for sqlite3 bindings from `cdecl` to `noconv`
+* Dynamically link sqlite3 using linker instead of dynlib
+* Removed `reopen`, `close`, `reprepare`, `finalize`
+* Removed `step<Database>`
+* Removed `{.discardable.}` from `step`
+* Refactored `raiseSqliteError` → `newException`
+* Refactored explain handling
   * Let setExplain accept static ints
   * Type explain level as int32 instead of int8
 * Rename
   * sqlite3c.nim → sqlite3.nim
-  * Result code SQLITE_OK → ResultCode.Ok
-  * SQLITE_TRANSIENT → TransientDestructor
-  * (Database|Statement)Wrapper → *Obj
-  * internal sqlite3* types → Sqlite3*
-  * isExplain → explainLevel
-  * sqliteCheck → check
+  * Removed all sqlite3_ prefixes in sqlite3.nim
+  * `Sqlite3` → `DatabaseHandle`, `Sqlite3_stmt` → `StatementHandle`
+  * `(Database|Statement)Wrapper` → `(Database|Statement)Obj`
+  * `isExplain` → `explainLevel`
+  * `sqliteCheck` → `check`
 
 ## 1.3.0 - April 28 2024
 

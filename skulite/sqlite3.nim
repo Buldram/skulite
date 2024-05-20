@@ -29,9 +29,11 @@ else:
 
 
 type
-  Sqlite3* {.incompleteStruct.} = object # Database connection handle
-  Sqlite3_stmt* {.incompleteStruct.} = object
-  Sqlite3_destructor* = proc (x: pointer) {.noconv, gcsafe, raises: [].}
+  DatabaseHandle* {.incompleteStruct.} = object # Database connection
+  StatementHandle* {.incompleteStruct.} = object
+  Database* = ptr DatabaseHandle
+  Statement* = ptr StatementHandle
+  Destructor* = proc (x: pointer) {.noconv, gcsafe, raises: [].}
 
   ResultCode* {.size: sizeof(int32).} = enum
     Ok,         ## Successful result
@@ -145,11 +147,11 @@ type
     IoerrInPage            = Ioerr.int or 34 shl 8
 
 const
-  StaticDestructor* = cast[Sqlite3_destructor](0)
-  TransientDestructor* = cast[Sqlite3_destructor](-1)
+  StaticDestructor* = cast[Destructor](0)
+  TransientDestructor* = cast[Destructor](-1)
 
-func sqlite3_errstr*(code: ResultCode): cstring {.importc, noconv.}
-func sqlite3_errcode*(db: ptr Sqlite3): ResultCode {.importc, noconv.}
+func errstr*(code: ResultCode): cstring {.noconv, importc: "sqlite3_errstr".}
+func errcode*(db: Database): ResultCode {.noconv, importc: "sqlite3_errcode".}
 
 type OpenFlag* {.size: sizeof(int32).} = enum
   ReadOnly,      ## Ok for sqlite3_open_v2()
@@ -179,13 +181,13 @@ const
   SuperJournal* = MasterJournal
 
 when defined(nimHasOutParams):
-  proc sqlite3_open_v2*(filename: cstring; db: out ptr Sqlite3; flags: int32|set[OpenFlag]; vfs: cstring): ResultCode {.importc, noconv, sideEffect.}
+  proc open_v2*(filename: cstring; db: out Database; flags: int32|set[OpenFlag]; vfs: cstring): ResultCode {.noconv, sideEffect, importc: "sqlite3_open_v2".}
 else:
-  proc sqlite3_open_v2*(filename: cstring; db: var ptr Sqlite3; flags: int32|set[OpenFlag]; vfs: cstring): ResultCode {.importc, noconv, sideEffect.}
+  proc open_v2*(filename: cstring; db: var Database; flags: int32|set[OpenFlag]; vfs: cstring): ResultCode {.noconv, sideEffect, importc: "sqlite3_open_v2".}
 
-proc sqlite3_close_v2*(db: ptr Sqlite3): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_db_cacheflush*(db: ptr Sqlite3): ResultCode {.importc, noconv, sideEffect.}
-func sqlite3_last_insert_rowid*(db: ptr Sqlite3): int64 {.importc, noconv.}
+proc close_v2*(db: Database): ResultCode {.noconv, sideEffect, importc: "sqlite3_close_v2".}
+proc db_cache_flush*(db: Database): ResultCode {.noconv, sideEffect, importc: "sqlite3_db_cacheflush".}
+func last_insert_rowid*(db: Database): int64 {.noconv, importc: "sqlite3_last_insert_rowid".}
 
 
 type PrepareFlag* {.size: sizeof(uint32).} = enum
@@ -194,42 +196,42 @@ type PrepareFlag* {.size: sizeof(uint32).} = enum
   NoVtab
 
 when defined(nimHasOutParams):
-  proc sqlite3_prepare_v3*(db: ptr Sqlite3; sql: cstring; len: int32; prepFlags: uint32|set[PrepareFlag]; stmt: out ptr Sqlite3_stmt; tail: ptr cstring): ResultCode {.importc, noconv, sideEffect.}
+  proc prepare_v3*(db: Database; sql: cstring; len: int32; prepFlags: uint32|set[PrepareFlag]; stmt: out Statement; tail: ptr cstring): ResultCode {.noconv, sideEffect, importc: "sqlite3_prepare_v3".}
 else:
-  proc sqlite3_prepare_v3*(db: ptr Sqlite3; sql: cstring; len: int32; prepFlags: uint32|set[PrepareFlag]; stmt: var ptr Sqlite3_stmt; tail: ptr cstring): ResultCode {.importc, noconv, sideEffect.}
+  proc prepare_v3*(db: Database; sql: cstring; len: int32; prepFlags: uint32|set[PrepareFlag]; stmt: var Statement; tail: ptr cstring): ResultCode {.noconv, sideEffect, importc: "sqlite3_prepare_v3".}
 
-proc sqlite3_finalize*(stmt: ptr Sqlite3_stmt): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_step*(stmt: ptr Sqlite3_stmt): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_reset*(stmt: ptr Sqlite3_stmt): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_clear_bindings*(stmt: ptr Sqlite3_stmt): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_stmt_explain*(stmt: ptr Sqlite3_stmt; mode: int32): ResultCode {.importc, noconv.}
+proc finalize*(stmt: Statement): ResultCode {.noconv, sideEffect, importc: "sqlite3_finalize".}
+proc step*(stmt: Statement): ResultCode {.noconv, sideEffect, importc: "sqlite3_step".}
+proc reset*(stmt: Statement): ResultCode {.noconv, sideEffect, importc: "sqlite3_reset".}
+proc clear_bindings*(stmt: Statement): ResultCode {.noconv, sideEffect, importc: "sqlite3_clear_bindings".}
+proc stmt_explain*(stmt: Statement; mode: int32): ResultCode {.noconv, importc: "sqlite3_stmt_explain".}
 
-func sqlite3_bind_parameter_count*(stmt: ptr Sqlite3_stmt): int32 {.importc, noconv.}
-func sqlite3_column_count*(stmt: ptr Sqlite3_stmt): int32 {.importc, noconv.}
-func sqlite3_data_count*(stmt: ptr Sqlite3_stmt): int32 {.importc, noconv.}
-func sqlite3_stmt_readonly*(stmt: ptr Sqlite3_stmt): bool {.importc, noconv.}
-func sqlite3_stmt_isexplain*(stmt: ptr Sqlite3_stmt): range[0'i32..2'i32] {.importc, noconv.}
-proc sqlite3_stmt_busy*(stmt: ptr Sqlite3_stmt): bool {.importc, noconv.}
-func sqlite3_db_handle*(stmt: ptr Sqlite3_stmt): ptr Sqlite3 {.importc, noconv.}
-func sqlite3_sql*(stmt: ptr Sqlite3_stmt): cstring {.importc, noconv.}
-proc sqlite3_next_stmt*(db: ptr Sqlite3; stmt: ptr Sqlite3_stmt): ptr Sqlite3_stmt {.importc, noconv.}
-proc sqlite3_free*(p: pointer) {.importc, noconv, sideEffect.}
-proc sqlite3_expanded_sql*(stmt: ptr Sqlite3_stmt): cstring {.importc, noconv, sideEffect.}
+func bind_parameter_count*(stmt: Statement): int32 {.noconv, importc: "sqlite3_bind_parameter_count".}
+func column_count*(stmt: Statement): int32 {.noconv, importc: "sqlite3_column_count".}
+func data_count*(stmt: Statement): int32 {.noconv, importc: "sqlite3_data_count".}
+func stmt_readonly*(stmt: Statement): bool {.noconv, importc: "sqlite3_stmt_readonly".}
+func stmt_isexplain*(stmt: Statement): range[0'i32..2'i32] {.noconv, importc: "sqlite3_stmt_isexplain".}
+proc stmt_busy*(stmt: Statement): bool {.noconv, importc: "sqlite3_stmt_busy".}
+func db_handle*(stmt: Statement): Database {.noconv, importc: "sqlite3_db_handle".}
+func sql*(stmt: Statement): cstring {.noconv, importc: "sqlite3_sql".}
+proc next_stmt*(db: Database; stmt: Statement): Statement {.noconv, importc: "sqlite3_next_stmt".}
+proc free*(p: pointer) {.noconv, sideEffect, importc: "sqlite3_free".}
+proc expanded_sql*(stmt: Statement): cstring {.noconv, sideEffect, importc: "sqlite3_expanded_sql".}
 
-proc sqlite3_bind_int64*(stmt: ptr Sqlite3_stmt; index: int32; val: int64): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_bind_double*(stmt: ptr Sqlite3_stmt; index: int32; val: float64): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_bind_text*(stmt: ptr Sqlite3_stmt; index: int32; val: cstring; len: int32; destructor: Sqlite3_destructor): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_bind_blob*(stmt: ptr Sqlite3_stmt; index: int32; val: pointer; len: int32; destructor: Sqlite3_destructor): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_bind_null*(stmt: ptr Sqlite3_stmt; index: int32): ResultCode {.importc, noconv, sideEffect.}
-proc sqlite3_bind_parameter_index*(stmt: ptr Sqlite3_stmt, name: cstring): int32 {.importc, noconv, sideEffect.}
+proc bind_int64*(stmt: Statement; index: int32; val: int64): ResultCode {.noconv, sideEffect, importc: "sqlite3_bind_int64".}
+proc bind_double*(stmt: Statement; index: int32; val: float64): ResultCode {.noconv, sideEffect, importc: "sqlite3_bind_double".}
+proc bind_text*(stmt: Statement; index: int32; val: cstring; len: int32; destructor: Destructor): ResultCode {.noconv, sideEffect, importc: "sqlite3_bind_text".}
+proc bind_blob*(stmt: Statement; index: int32; val: pointer; len: int32; destructor: Destructor): ResultCode {.noconv, sideEffect, importc: "sqlite3_bind_blob".}
+proc bind_null*(stmt: Statement; index: int32): ResultCode {.noconv, sideEffect, importc: "sqlite3_bind_null".}
+proc bind_parameter_index*(stmt: Statement, name: cstring): int32 {.noconv, sideEffect, importc: "sqlite3_bind_parameter_index".}
 
-proc sqlite3_column_int*(stmt: ptr Sqlite3_stmt; index: int32): int32 {.importc, noconv, sideEffect.}
-proc sqlite3_column_int64*(stmt: ptr Sqlite3_stmt; index: int32): int64 {.importc, noconv, sideEffect.}
-proc sqlite3_column_double*(stmt: ptr Sqlite3_stmt; index: int32): float64 {.importc, noconv, sideEffect.}
-proc sqlite3_column_text*(stmt: ptr Sqlite3_stmt; index: int32): cstring {.importc, noconv, sideEffect.}
-proc sqlite3_column_blob*(stmt: ptr Sqlite3_stmt; index: int32): ptr UncheckedArray[byte] {.importc, noconv, sideEffect.}
-proc sqlite3_column_bytes*(stmt: ptr Sqlite3_stmt; index: int32): int32 {.importc, noconv, sideEffect.}
-proc sqlite3_column_name*(stmt: ptr Sqlite3_stmt; index: int32): cstring {.importc, noconv, sideEffect.}
+proc column_int*(stmt: Statement; index: int32): int32 {.noconv, sideEffect, importc: "sqlite3_column_int".}
+proc column_int64*(stmt: Statement; index: int32): int64 {.noconv, sideEffect, importc: "sqlite3_column_int64".}
+proc column_double*(stmt: Statement; index: int32): float64 {.noconv, sideEffect, importc: "sqlite3_column_double".}
+proc column_text*(stmt: Statement; index: int32): cstring {.noconv, sideEffect, importc: "sqlite3_column_text".}
+proc column_blob*(stmt: Statement; index: int32): ptr UncheckedArray[byte] {.noconv, sideEffect, importc: "sqlite3_column_blob".}
+proc column_bytes*(stmt: Statement; index: int32): int32 {.noconv, sideEffect, importc: "sqlite3_column_bytes".}
+proc column_name*(stmt: Statement; index: int32): cstring {.noconv, sideEffect, importc: "sqlite3_column_name".}
 
 type Datatype* {.size: sizeof(int32).} = enum
   SqliteInteger = 1,
@@ -238,7 +240,7 @@ type Datatype* {.size: sizeof(int32).} = enum
   SqliteBlob,
   SqliteNull
 
-proc sqlite3_column_type*(stmt: ptr Sqlite3_stmt; index: int32): Datatype {.importc, noconv, sideEffect.}
+proc column_type*(stmt: Statement; index: int32): Datatype {.noconv, sideEffect, importc: "sqlite3_column_type".}
 
 
 type ConfigOp* = enum
@@ -273,4 +275,4 @@ type ConfigOp* = enum
   MemdbMaxsize = 29 ## sqlite3_int64
   RowidInView = 30 ## int*
 
-proc sqlite3_config*(op: ConfigOp): ResultCode {.importc, noconv, sideEffect, varargs.}
+proc config*(op: ConfigOp): ResultCode {.noconv, sideEffect, varargs, importc: "sqlite3_config".}

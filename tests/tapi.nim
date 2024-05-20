@@ -1,5 +1,5 @@
 import ../skulite
-from ../skulite/sqlite3 import sqlite3_bind_text
+from ../skulite/sqlite3 import bind_text
 
 proc tapi {.inline.} =
   let db = openDatabase(":memory:")
@@ -18,6 +18,6 @@ proc tapi {.inline.} =
       let s = db.prepStatement "CREATE TABLE IF NOT EXISTS test(words)"
       proc one(_: pointer) {.noconv.} =
         v = 1
-      discard sqlite3_bind_text(s, 1, "", 0, one)
+      discard sqlite3.bind_text(s, 1, "", 0, one)
     doAssert v == 1
 tapi()

@@ -1,6 +1,7 @@
 import std/[macros, options, typetraits]
-import skulite/[sqlite3, shim]
-export OpenFlag, SuperJournal, PrepareFlag, Datatype, ConfigOp
+import skulite/shim
+from skulite/sqlite3 import ResultCode, Database, Statement, OpenFlag, SuperJournal, PrepareFlag, Datatype, ConfigOp
+export Database, Statement, OpenFlag, SuperJournal, PrepareFlag, Datatype, ConfigOp
 
 when not defined(gcDestructors):
   when (NimMajor, NimMinor, NimPatch) >= (1, 6, 2): {.error: "requires --mm:arc/orc".}
@@ -12,7 +13,7 @@ const checkSqliteUsage* {.booldefine.} = not defined(release)
 type SqliteError* = object of CatchableError
 
 template newException*(err: ResultCode): ref SqliteError =
-  newException(SqliteError, $sqlite3_errstr(err))
+  newException(SqliteError, $sqlite3.errstr(err))
 
 func check*(ret: ResultCode) {.inline, raises: [SqliteError].} =
   if unlikely ret != Ok: raise newException(ret)
@@ -21,9 +22,8 @@ func check*(ret: ResultCode) {.inline, raises: [SqliteError].} =
 # We have "wrapper" objects for destructors but this module's procedures accept the underlying pointer (with implicit unwrapping via `converter`) to give users the option to create and use custom objects.
 
 type
-  Database* = ptr Sqlite3
   DatabaseObj* = object
-    raw*: ptr Sqlite3
+    raw*: Database
 
 converter toPtr*(db: DatabaseObj): lent Database {.inline.} = db.raw
 converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.raw
@@ -31,26 +31,25 @@ converter toPtr*(db: var DatabaseObj): var Database {.inline.} = db.raw
 proc `=copy`*(dest: var DatabaseObj; src: DatabaseObj) {.error.}
 proc `=dup`*(x: DatabaseObj): DatabaseObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: DatabaseObj) = discard sqlite3_close_v2(x)
+  proc `=destroy`*(x: DatabaseObj) = discard sqlite3.close_v2(x)
 else:
-  proc `=destroy`*(x: var DatabaseObj) = discard sqlite3_close_v2(x)
+  proc `=destroy`*(x: var DatabaseObj) = discard sqlite3.close_v2(x)
 
 proc openDatabase*(filename: cstring|static[string]; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj {.inline.} =
-  check sqlite3_open_v2(filename, result, flags, vfs)
+  check sqlite3.open_v2(filename, result, flags, vfs)
 
 template openDatabase*(filename: string; flags = {ReadWrite, Create, ExResCode}; vfs: cstring = nil): DatabaseObj =
   openDatabase(cstring filename, flags, vfs)
 
 proc flush*(db: Database) {.inline.} =
-  check sqlite3_db_cacheflush(db)
+  check sqlite3.db_cache_flush(db)
 
 macro config*(op: ConfigOp; args: varargs[untyped]) =
-  result = quote do: check sqlite3_config(`op`)
+  result = quote do: check sqlite3.config(`op`)
   for arg in args: result[^1].add arg
 
 
 type
-  Statement* = ptr Sqlite3_stmt
   StatementObj* = object
     raw*: Statement
 
@@ -60,20 +59,20 @@ converter toPtr*(stmt: var StatementObj): var Statement {.inline.} = stmt.raw
 proc `=copy`*(dest: var StatementObj; src: StatementObj) {.error.}
 proc `=dup`*(x: StatementObj): StatementObj {.error.}
 when defined(nimAllowNonVarDestructor):
-  proc `=destroy`*(x: StatementObj) = discard sqlite3_finalize(x)
+  proc `=destroy`*(x: StatementObj) = discard sqlite3.finalize(x)
 else:
-  proc `=destroy`*(x: var StatementObj) = discard sqlite3_finalize(x)
+  proc `=destroy`*(x: var StatementObj) = discard sqlite3.finalize(x)
 
 proc prepStatement*(db: Database; sql: cstring|static[string]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
-  check sqlite3_prepare_v3(db, sql, int32 sql.len, flags, result, nil)
+  check sqlite3.prepare_v3(db, sql, int32 sql.len, flags, result, nil)
 
 proc prepStatement*(db: Database; sql: openArray[char]; flags: set[PrepareFlag] = {}): StatementObj {.inline.} =
-  check sqlite3_prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result, nil)
+  check sqlite3.prepare_v3(db, cast[cstring](unsafeAddr sql), int32 sql.len, flags, result, nil)
 
 
 template sql*(stmt: Statement): cstring =
   ## Returns `stmt`'s internal copy of the SQL text used to create it.
-  sqlite3_sql(stmt)
+  sqlite3.sql(stmt)
 
 template `$`*(stmt: Statement|StatementObj): string =
   $stmt.sql
@@ -81,7 +80,7 @@ template `$`*(stmt: Statement|StatementObj): string =
 
 proc step*(stmt: Statement): bool {.inline.} =
   ## Evaluate or "step" an SQL `stmt`. Returns `true` if the evaluation returned a row of data.
-  let ret = sqlite3_step(stmt)
+  let ret = sqlite3.step(stmt)
   case ret
   of Row: true
   of Done: false
@@ -89,17 +88,17 @@ proc step*(stmt: Statement): bool {.inline.} =
 
 proc exec*(stmt: Statement) {.inline.} =
   ## Execute an SQL `stmt`. Raises an exception if the execution returned a row of data. TODO: Should this Rollback?
-  let ret = sqlite3_step(stmt)
+  let ret = sqlite3.step(stmt)
   if unlikely ret != Done:
     raise newException(ret)
 
 
 template db*(stmt: Statement): Database =
   ## Returns the database connection to which `stmt` belongs.
-  sqlite3_db_handle(stmt)
+  sqlite3.dbHandle(stmt)
 
 func checkForError(db: Database) {.inline.} =
-  let ret = sqlite3_errcode(db)
+  let ret = sqlite3.errcode(db)
   if unlikely ret notin {Ok, Row, Done}:
     raise newException(ret)
 
@@ -132,7 +131,7 @@ macro `[]`*[t](stmt: Statement; index: auto; T: typedesc[t]; other: varargs[unty
 
 template paramIndex*(stmt: Statement; name: cstring): Natural32 =
   ## Get the index of a named parameter or 0 if not found.
-  sqlite3_bind_parameter_index(stmt, name)
+  sqlite3.bindParameterIndex(stmt, name)
 
 template paramIndex*(stmt: Statement; name: string): Natural32 =
   ## Get the index of a named parameter or 0 if not found.
@@ -150,38 +149,38 @@ macro bindParam*(stmt: Statement; name: cstring|string; val: typed; other: varar
 proc restart*(stmt: Statement) {.inline.} =
   ## Reset a statement to the beginning of its program, ready to be re-executed.
   ## Does not unbind bound parameters.
-  check sqlite3_reset(stmt)
+  check sqlite3.reset(stmt)
 
 proc clearParams*(stmt: Statement) {.inline.} =
-  check sqlite3_clear_bindings(stmt)
+  check sqlite3.clearBindings(stmt)
 
 
 #                                       Statement utilities
 
 proc getColumnName*(stmt: Statement; index: Natural32): cstring {.inline.} =
   ## Warning: Copy-less access, freed when 1. `stmt` is finalized/freed (and finalized by `=destroy`) 2. `stmt` is stepped 3. `stmt` is reset.
-  result = sqlite3_column_name(stmt, index)
+  result = sqlite3.column_name(stmt, index)
   if unlikely isNil(result): checkForError(stmt)
 
 template numParams*(stmt: Statement): int32 =
-  sqlite3_bind_parameter_count(stmt)
+  sqlite3.bind_parameter_count(stmt)
 
 template numColumns*(stmt: Statement): int32 =
-  sqlite3_column_count(stmt)
+  sqlite3.column_count(stmt)
 
 template numValues*(stmt: Statement): int32 =
   ## Same as `numColumns`, but returns 0 if `stmt` hasn't been stepped yet.
-  sqlite3_data_count(stmt)
+  sqlite3.data_count(stmt)
 
 type
-  SqliteAlloc[T: pointer|ptr|cstring] = object ## Obj with a `=destroy` hook which calls `sqlite3_free`
+  SqliteAlloc[T: pointer|ptr|cstring] = object ## Obj with a `=destroy` hook which calls `sqlite3.free`
     val*: T
 when defined(nimAllowNonVarDestructor):
   proc `=destroy`*[T](x: SqliteAlloc[T]) =
-    sqlite3_free(x.val)
+    sqlite3.free(x.val)
 else:
   proc `=destroy`*[T](x: var SqliteAlloc[T]) =
-    sqlite3_free(x.val)
+    sqlite3.free(x.val)
 proc `=copy`*[T](dest: var SqliteAlloc[T]; src: SqliteAlloc[T]) {.error.}
 proc `=dup`*[T](x: SqliteAlloc[T]): SqliteAlloc[T] {.error.}
 converter get*[T](sqliteAlloc: SqliteAlloc[T]): lent T {.inline.} = sqliteAlloc.val
@@ -190,21 +189,21 @@ template `$`*[T](wrapped: SqliteAlloc[T]): string = $wrapped.val
 
 template expandedSql*(stmt: Statement): SqliteAlloc[cstring] =
   ## Computes and returns the SQL text of `stmt` after parameter substitution.
-  SqliteAlloc[cstring](val: sqlite3_expanded_sql(stmt))
+  SqliteAlloc[cstring](val: sqlite3.expanded_sql(stmt))
 
 template readonly*(stmt: Statement): bool =
-  sqlite3_stmt_readonly(stmt)
+  sqlite3.stmt_readonly(stmt)
 
 template busy*(stmt: Statement): bool =
-  sqlite3_stmt_busy(stmt)
+  sqlite3.stmt_busy(stmt)
 
 template lastInsertRowID*(db: Database): int64 =
   ## Returns the ROWID of the most recent insert, or 0 if there has never been a successful insert into a ROWID table on this connection.
-  sqlite3_last_insert_rowid(db)
+  sqlite3.last_insert_rowid(db)
 
 template lastStatement*(db: Database; stmt: Statement = nil): Statement =
   ## Returns the last `Statement` prepared before `stmt`, or if `stmt` is `nil`, the last `Statement` prepared.
-  sqlite3_next_stmt(db, stmt)
+  sqlite3.next_stmt(db, stmt)
 
 
 #                                   Readable high-level interface
@@ -287,12 +286,12 @@ from std/strutils import alignLeft
 
 template explainLevel*(stmt: Statement): range[0'i32..2'i32] =
   ## Returns 0 if `stmt` is not an "EXPLAIN" statement, 1 otherwise, and 2 if `stmt` is an "EXPLAIN QUERY PLAN" statement.
-  sqlite3_stmt_isexplain(stmt)
+  sqlite3.stmt_isexplain(stmt)
 
 proc setExplain*(stmt: Statement; mode: bool|range[0'i32..2'i32]|static[range[0..2]] = true) {.inline.} =
   ## Change the EXPLAIN flag for `stmt` so that it acts as if it was/wasn't prefixed with "EXPLAIN" or "EXPLAIN QUERY PLAN".
   if stmt.busy: restart stmt
-  check sqlite3_stmt_explain(stmt, int32 mode)
+  check sqlite3.stmt_explain(stmt, int32 mode)
 
 proc getExplanation(stmt: Statement): seq[seq[string]] {.inline.} =
   let origExplain = stmt.explainLevel

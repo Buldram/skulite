@@ -1,4 +1,5 @@
-import ../skulite, ../skulite/sqlite3
+import ../skulite
+from ../skulite/sqlite3 import bind_blob, TransientDestructor
 import std/options
 
 proc ordinals {.inline.} =
@@ -141,7 +142,7 @@ proc objects {.inline.} =
   doAssert db.query("SELECT blobs FROM test LIMIT 1", Test) == bomber
 
   proc bindParam[T: Test|Test2](stmt: Statement; index: Positive32; val: T) {.inline.} =
-    check sqlite3_bind_blob(stmt, cint index, unsafeAddr bomber, cint sizeof(bomber), TransientDestructor)
+    check sqlite3.bind_blob(stmt, cint index, unsafeAddr bomber, cint sizeof(bomber), TransientDestructor)
 
   reset db
   db.exec "INSERT INTO test (blobs) VALUES (?)", Test(a: 10, b: 'b')
