@@ -18,16 +18,15 @@ for word in db.query("SELECT words FROM greeting", string):
 # World!
 ```
 
-#### Storing a hash table as [JSON](https://www.sqlite.org/json1.html) using [Sunny](https://github.com/guzba/sunny)
+#### Storing a hash table as [JSON](https://www.sqlite.org/json1.html) using [jsony](https://github.com/treeform/jsony)
 ```nim
-import pkg/[skulite, sunny],
-       std/tables
+import pkg/[skulite, jsony], std/tables
 
 proc bindParam*(stmt: Statement; index: Positive32; val: SomeTable) {.inline.} =
-  bindParam(stmt, index, toJson val)
+  bindParam(stmt, index, toJson(val))
 
 proc getColumn*[K,V](stmt: Statement; index: Natural32; T: typedesc[SomeTable[K,V]]): T {.inline.} =
-  T.fromJson getColumn(stmt, index, string)
+  fromJson(getColumn(stmt, index, string), T)
 
 let db = openDatabase(":memory:")
 db.exec "CREATE TABLE IF NOT EXISTS projects(metadata TEXT) STRICT"

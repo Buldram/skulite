@@ -12,14 +12,14 @@ proc basic {.inline.} =
 basic()
 
 when NimMajor > 1:
-  when (compiles do: import pkg/sunny):
+  when (compiles do: import pkg/jsony):
     import std/tables
-    proc sunny {.inline.} =
+    proc json {.inline.} =
       proc bindParam(stmt: Statement; index: Positive32; val: SomeTable) {.inline.} =
-        bindParam(stmt, index, toJson val)
+        bindParam(stmt, index, toJson(val))
 
       proc getColumn[K,V](stmt: Statement; index: Natural32; T: typedesc[SomeTable[K,V]]): T {.inline.} =
-        T.fromJson getColumn(stmt, index, string)
+        fromJson(getColumn(stmt, index, string), T)
 
       let db = openDatabase(":memory:")
       db.exec "CREATE TABLE IF NOT EXISTS projects(metadata TEXT) STRICT"
@@ -31,6 +31,6 @@ when NimMajor > 1:
       doAssert "nim" == db.query("SELECT json_extract(metadata, '$.language') FROM projects LIMIT 1", string)
       doAssert "blessing" == db.query("SELECT metadata FROM projects LIMIT 1", Table[string, string])["license"]
       doAssert "blessing" == db.query("SELECT json_extract(metadata, '$.license') FROM projects LIMIT 1", string)
-    sunny()
+    json()
 else:
-  echo "Warning: sunny is not available and so wasn't tested."
+  echo "Warning: jsony is not available and so wasn't tested."

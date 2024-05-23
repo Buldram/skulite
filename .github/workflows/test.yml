@@ -50,19 +50,13 @@ jobs:
     - name: Run tests with balls
       if: ${{ matrix.os == 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel') }}
       run: |
-        nimble install -y https://github.com/disruptek/balls sunny
+        nimble install -y https://github.com/disruptek/balls jsony
         balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite
 
-    - name: Run tests with balls@v3 (Nim 2.0)
-      if: ${{ matrix.nim-version == '2.0.0' || matrix.os != 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel') }}
+    - name: Run tests with balls@v3
+      if: ${{ matrix.nim-version == '1.6.x' || matrix.nim-version == '2.0.0' || matrix.os != 'ubuntu-latest' && (matrix.nim-version == 'stable' || matrix.nim-version == 'devel') }}
       run: |
-        nimble install -y https://github.com/disruptek/balls@#v3 sunny
-        balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite
-
-    - name: Run tests with balls@v3 (Nim < 2.0)
-      if: ${{ matrix.nim-version == '1.6.x' }}
-      run: |
-        nimble install -y https://github.com/disruptek/balls@#v3
+        nimble install -y https://github.com/disruptek/balls@#v3 jsony
         balls -b:c -d:debug -d:release -d:danger --mm:arc --mm:orc -d:staticSqlite
 
     - name: Run tests with nimble test
